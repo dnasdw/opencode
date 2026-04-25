@@ -24,9 +24,9 @@ const archMap = {
 
 const platform = platformMap[os.platform()] ?? os.platform()
 const arch = archMap[os.arch()] ?? os.arch()
-const base = `opencode-${platform}-${arch}`
-const sourceBinary = platform === "windows" ? "opencode.exe" : "opencode"
-const targetBinary = path.join(__dirname, "bin", "opencode.exe")
+const base = `mycode-${platform}-${arch}`
+const sourceBinary = platform === "windows" ? "mycode.exe" : "mycode"
+const targetBinary = path.join(__dirname, "bin", "mycode.exe")
 
 function supportsAvx2() {
   if (arch !== "x64") return false
