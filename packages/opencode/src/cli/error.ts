@@ -66,7 +66,7 @@ export function FormatError(input: unknown) {
     return [
       `Model not found: ${providerModelNotFound.providerID}/${providerModelNotFound.modelID}`,
       ...(suggestions.length ? ["Did you mean: " + suggestions.join(", ")] : []),
-      `Try: \`opencode models\` to list available models`,
+      `Try: \`mycode models\` to list available models`,
       `Or check your config (opencode.json) provider/model names`,
     ].join("\n")
   }
