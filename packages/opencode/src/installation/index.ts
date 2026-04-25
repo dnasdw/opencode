@@ -188,7 +188,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
         for (const check of checks) {
           const output = yield* check.command()
           const installedName =
-            check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : "opencode-ai"
+            check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : "@dnasdw/mycode"
           if (output.includes(installedName)) {
             return check.name
           }
@@ -222,7 +222,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
           const registry = reg.endsWith("/") ? reg.slice(0, -1) : reg
           const channel = InstallationChannel
           const response = yield* httpOk.execute(
-            HttpClientRequest.get(`${registry}/opencode-ai/${channel}`).pipe(HttpClientRequest.acceptJson),
+            HttpClientRequest.get(`${registry}/@dnasdw/mycode/${channel}`).pipe(HttpClientRequest.acceptJson),
           )
           const data = yield* HttpClientResponse.schemaBodyJson(NpmPackage)(response)
           return data.version
@@ -249,7 +249,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
         }
 
         const response = yield* httpOk.execute(
-          HttpClientRequest.get("https://api.github.com/repos/anomalyco/opencode/releases/latest").pipe(
+          HttpClientRequest.get("https://api.github.com/repos/dnasdw/opencode/releases/latest").pipe(
             HttpClientRequest.acceptJson,
           ),
         )
@@ -264,13 +264,13 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
             result = yield* upgradeCurl(target)
             break
           case "npm":
-            result = yield* run(["npm", "install", "-g", `opencode-ai@${target}`])
+            result = yield* run(["npm", "install", "-g", `@dnasdw/mycode@${target}`])
             break
           case "pnpm":
-            result = yield* run(["pnpm", "install", "-g", `opencode-ai@${target}`])
+            result = yield* run(["pnpm", "install", "-g", `@dnasdw/mycode@${target}`])
             break
           case "bun":
-            result = yield* run(["bun", "install", "-g", `opencode-ai@${target}`])
+            result = yield* run(["bun", "install", "-g", `@dnasdw/mycode@${target}`])
             break
           case "brew": {
             const formula = yield* getBrewFormula()
