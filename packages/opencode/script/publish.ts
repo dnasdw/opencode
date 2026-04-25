@@ -54,7 +54,7 @@ await Bun.file(`./dist/${pkg.name}/bin/${pkg.name}.exe`).write(
 await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
     {
-      name: pkg.name + "-ai",
+      name: "@dnasdw/mycode",
       bin: {
         [pkg.name]: `./bin/${pkg.name}.exe`,
       },
@@ -76,7 +76,10 @@ const tasks = Object.entries(binaries).map(async ([name]) => {
   await publish(`./dist/${name}`, name, binaries[name])
 })
 await Promise.all(tasks)
-await publish(`./dist/${pkg.name}`, `${pkg.name}-ai`, version)
+await publish(`./dist/${pkg.name}`, "@dnasdw/mycode", version)
+
+// Docker, AUR, Homebrew publishing disabled for fork
+if (false) {
 
 const image = "ghcr.io/anomalyco/opencode"
 const platforms = "linux/amd64,linux/arm64"
@@ -210,4 +213,5 @@ if (!Script.preview) {
     await $`cd ./dist/homebrew-tap && git commit -m "Update to v${Script.version}"`
     await $`cd ./dist/homebrew-tap && git push`
   }
+}
 }
