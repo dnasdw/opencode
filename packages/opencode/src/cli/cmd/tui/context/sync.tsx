@@ -33,6 +33,7 @@ import { emptyConsoleState, type ConsoleState } from "@opencode-ai/core/v1/confi
 import path from "path"
 import { useKV } from "./kv"
 import { aggregateFailures } from "./aggregate-failures"
+import { useTuiConfig } from "./tui-config"
 
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   name: "Sync",
@@ -111,6 +112,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     const project = useProject()
     const sdk = useSDK()
     const kv = useKV()
+    const tuiConfig = useTuiConfig()
+
+    const messageLimit = () => tuiConfig.message_limit ?? 100
 
     const fullSyncedSessions = new Set<string>()
     const syncingSessions = new Map<string, Promise<void>>()
@@ -294,7 +298,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             }),
           )
           const updated = store.message[event.properties.info.sessionID]
-          if (updated.length > 100) {
+          const limit = messageLimit()
+          if (limit > 0 && updated.length > limit) {
             const oldest = updated[0]
             batch(() => {
               setStore(
@@ -554,9 +559,10 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           const tracker = { messages: new Set<string>(), parts: new Set<string>() }
           hydratingSessions.set(sessionID, tracker)
           const task = (async () => {
+            const limit = messageLimit()
             const [session, messages, todo, diff] = await Promise.all([
               sdk.client.session.get({ sessionID }, { throwOnError: true }),
-              sdk.client.session.messages({ sessionID, limit: 100 }),
+              sdk.client.session.messages({ sessionID, ...(limit > 0 ? { limit } : {}) }),
               sdk.client.session.todo({ sessionID }),
               sdk.client.session.diff({ sessionID }),
             ])
@@ -577,8 +583,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
                     (message) => tracker.messages.has(message.id) && !infos.some((item) => item.id === message.id),
                   ),
                 )
-                const removed = infos.slice(0, -100)
-                const visible = infos.slice(-100)
+                const removed = limit > 0 ? infos.slice(0, -limit) : []
+                const visible = limit > 0 ? infos.slice(-limit) : infos
                 const visibleIDs = new Set(visible.map((message) => message.id))
                 for (const message of messages.data ?? []) {
                   if (!visibleIDs.has(message.info.id)) {
