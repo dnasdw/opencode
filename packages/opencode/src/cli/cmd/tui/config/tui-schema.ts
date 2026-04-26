@@ -24,6 +24,12 @@ export const TuiOptions = z.object({
     .optional()
     .describe("Control diff rendering style: 'auto' adapts to terminal width, 'stacked' always shows single column"),
   mouse: z.boolean().optional().describe("Enable or disable mouse capture (default: true)"),
+  message_limit: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Maximum messages to keep in memory per session (default: 100, 0 = unlimited)"),
 })
 
 export const TuiInfo = z
