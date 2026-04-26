@@ -12,6 +12,7 @@
 # Features
 # ============================================================
 feat/mycode-build
+feat/tui-message-limit
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
