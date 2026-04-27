@@ -407,7 +407,7 @@ export function DialogSelectFile(props: { mode?: DialogSelectFileMode; onOpenFil
   }
 
   return (
-    <Dialog class="pt-3 pb-0 !max-h-[480px]" transition>
+    <Dialog class="pt-3 pb-0 !max-h-[480px]" transition title={filesOnly() ? language.t("command.file.open") : language.t("command.palette")}>
       <List
         class="px-3"
         search={{
