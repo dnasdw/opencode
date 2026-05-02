@@ -198,6 +198,11 @@
     pointer-events: auto;
   }
 
+  [data-slot="user-message-copy-wrapper"][data-always-show-meta] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .text-text-strong {
     color: var(--text-strong);
   }
@@ -245,6 +250,11 @@
 
   &:hover [data-slot="text-part-copy-wrapper"],
   &:focus-within [data-slot="text-part-copy-wrapper"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  [data-slot="text-part-copy-wrapper"][data-always-show-meta] {
     opacity: 1;
     pointer-events: auto;
   }
