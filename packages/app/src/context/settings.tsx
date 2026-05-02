@@ -33,6 +33,7 @@ export interface Settings {
     editToolPartsExpanded: boolean
     showSessionProgressBar: boolean
     showCustomAgents: boolean
+    alwaysShowMessageMeta: boolean
   }
   updates: {
     startup: boolean
@@ -119,6 +120,7 @@ const defaultSettings: Settings = {
     editToolPartsExpanded: false,
     showSessionProgressBar: true,
     showCustomAgents: false,
+    alwaysShowMessageMeta: false,
   },
   updates: {
     startup: true,
@@ -241,6 +243,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         showCustomAgents: withFallback(() => store.general?.showCustomAgents, defaultSettings.general.showCustomAgents),
         setShowCustomAgents(value: boolean) {
           setStore("general", "showCustomAgents", value)
+        },
+        alwaysShowMessageMeta: withFallback(
+          () => store.general?.alwaysShowMessageMeta,
+          defaultSettings.general.alwaysShowMessageMeta,
+        ),
+        setAlwaysShowMessageMeta(value: boolean) {
+          setStore("general", "alwaysShowMessageMeta", value)
         },
       },
       updates: {
