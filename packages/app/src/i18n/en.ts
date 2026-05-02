@@ -798,6 +798,8 @@ export const dict = {
   "settings.general.row.newLayoutDesigns.description": "Enable the redesigned layout, home, composer, and session UI",
   "settings.general.row.pinchZoom.title": "Pinch to zoom",
   "settings.general.row.pinchZoom.description": "Allow trackpad pinch and Ctrl-scroll gestures to zoom",
+  "settings.general.row.alwaysShowMessageMeta.title": "Always Show Message Details",
+  "settings.general.row.alwaysShowMessageMeta.description": "Show agent, model, and timestamp on all messages without hovering",
 
   "settings.general.row.wayland.title": "Use native Wayland",
   "settings.general.row.wayland.description": "Disable X11 fallback on Wayland. Requires restart.",
