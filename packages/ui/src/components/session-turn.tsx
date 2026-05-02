@@ -158,6 +158,7 @@ export function SessionTurn(
     showReasoningSummaries?: boolean
     shellToolDefaultOpen?: boolean
     editToolDefaultOpen?: boolean
+    alwaysShowMessageMeta?: boolean
     active?: boolean
     status?: SessionStatus
     onUserInteracted?: () => void
@@ -398,7 +399,7 @@ export function SessionTurn(
               class={props.classes?.container}
             >
               <div data-slot="session-turn-message-content" aria-live="off">
-                <Message message={message()!} parts={parts()} actions={props.actions} />
+                <Message message={message()!} parts={parts()} actions={props.actions} alwaysShowMessageMeta={props.alwaysShowMessageMeta} />
               </div>
               <Show when={divider()}>
                 <div data-slot="session-turn-compaction">
@@ -415,6 +416,7 @@ export function SessionTurn(
                     showReasoningSummaries={showReasoningSummaries()}
                     shellToolDefaultOpen={props.shellToolDefaultOpen}
                     editToolDefaultOpen={props.editToolDefaultOpen}
+                    alwaysShowMessageMeta={props.alwaysShowMessageMeta}
                   />
                 </div>
               </Show>
