@@ -32,6 +32,7 @@ export interface Settings {
     shellToolPartsExpanded: boolean
     editToolPartsExpanded: boolean
     showSessionProgressBar: boolean
+    alwaysShowMessageMeta: boolean
   }
   updates: {
     startup: boolean
@@ -117,6 +118,7 @@ const defaultSettings: Settings = {
     shellToolPartsExpanded: false,
     editToolPartsExpanded: false,
     showSessionProgressBar: true,
+    alwaysShowMessageMeta: false,
   },
   updates: {
     startup: true,
@@ -235,6 +237,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         ),
         setShowSessionProgressBar(value: boolean) {
           setStore("general", "showSessionProgressBar", value)
+        },
+        alwaysShowMessageMeta: withFallback(
+          () => store.general?.alwaysShowMessageMeta,
+          defaultSettings.general.alwaysShowMessageMeta,
+        ),
+        setAlwaysShowMessageMeta(value: boolean) {
+          setStore("general", "alwaysShowMessageMeta", value)
         },
       },
       updates: {
