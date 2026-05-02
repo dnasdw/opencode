@@ -160,6 +160,7 @@ export interface MessageProps {
   actions?: UserActions
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
+  alwaysShowMessageMeta?: boolean
 }
 
 export type SessionAction = (input: { sessionID: string; messageID: string }) => Promise<void> | void
@@ -177,6 +178,7 @@ export interface MessagePartProps {
   deferToolContent?: boolean
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
+  alwaysShowMessageMeta?: boolean
 }
 
 export type PartComponent = Component<MessagePartProps>
@@ -836,7 +838,7 @@ export function Message(props: MessageProps) {
     <Switch>
       <Match when={props.message.role === "user" && props.message}>
         {(userMessage) => (
-          <UserMessageDisplay message={userMessage() as UserMessage} parts={props.parts} actions={props.actions} />
+          <UserMessageDisplay message={userMessage() as UserMessage} parts={props.parts} actions={props.actions} alwaysShowMessageMeta={props.alwaysShowMessageMeta} />
         )}
       </Match>
       <Match when={props.message.role === "assistant" && props.message}>
@@ -846,6 +848,7 @@ export function Message(props: MessageProps) {
             parts={props.parts}
             showAssistantCopyPartID={props.showAssistantCopyPartID}
             showReasoningSummaries={props.showReasoningSummaries}
+            alwaysShowMessageMeta={props.alwaysShowMessageMeta}
           />
         )}
       </Match>
@@ -858,6 +861,7 @@ export function AssistantMessageDisplay(props: {
   parts: PartType[]
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
+  alwaysShowMessageMeta?: boolean
 }) {
   const emptyTools: ToolPart[] = []
   const part = createMemo(() => index(props.parts))
@@ -917,6 +921,7 @@ export function AssistantMessageDisplay(props: {
                       part={item()!}
                       message={props.message}
                       showAssistantCopyPartID={props.showAssistantCopyPartID}
+                      alwaysShowMessageMeta={props.alwaysShowMessageMeta}
                     />
                   </Show>
                 )
@@ -1033,7 +1038,7 @@ export function ContextToolGroup(props: { parts: ToolPart[]; busy?: boolean }) {
   )
 }
 
-export function UserMessageDisplay(props: { message: UserMessage; parts: PartType[]; actions?: UserActions }) {
+export function UserMessageDisplay(props: { message: UserMessage; parts: PartType[]; actions?: UserActions; alwaysShowMessageMeta?: boolean }) {
   const data = useData()
   const dialog = useDialog()
   const i18n = useI18n()
@@ -1070,7 +1075,7 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
   const stamp = createMemo(() => {
     const created = props.message.time?.created
     if (typeof created !== "number") return ""
-    return timefmt().format(created)
+    return timefmt().format(created) + " · " + new Date(created).toLocaleDateString()
   })
 
   const metaHead = createMemo(() => {
@@ -1151,7 +1156,7 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
               <HighlightedText text={text()} references={inlineFiles()} agents={agents()} />
             </div>
           </div>
-          <div data-slot="user-message-copy-wrapper">
+          <div data-slot="user-message-copy-wrapper" data-always-show-meta={props.alwaysShowMessageMeta ? "" : undefined}>
             <Show when={metaHead() || metaTail()}>
               <span data-slot="user-message-meta-wrap">
                 <Show when={metaHead()}>
@@ -1263,6 +1268,7 @@ export function Part(props: MessagePartProps) {
         deferToolContent={props.deferToolContent}
         showAssistantCopyPartID={props.showAssistantCopyPartID}
         turnDurationMs={props.turnDurationMs}
+        alwaysShowMessageMeta={props.alwaysShowMessageMeta}
       />
     </Show>
   )
@@ -1482,12 +1488,21 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     })
   })
 
+  const timefmt = createMemo(() => new Intl.DateTimeFormat(i18n.locale(), { timeStyle: "short" }))
+
+  const stamp = createMemo(() => {
+    const created = props.message.time?.created
+    if (typeof created !== "number") return ""
+    return timefmt().format(created) + " · " + new Date(created).toLocaleDateString()
+  })
+
   const meta = createMemo(() => {
     if (props.message.role !== "assistant") return ""
     const agent = (props.message as AssistantMessage).agent
     const items = [
       agent ? agent[0]?.toUpperCase() + agent.slice(1) : "",
       model(),
+      stamp(),
       duration(),
       interrupted() ? i18n.t("ui.message.interrupted") : "",
     ]
@@ -1530,7 +1545,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
           </Show>
         </div>
         <Show when={showCopy()}>
-          <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
+          <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined} data-always-show-meta={props.alwaysShowMessageMeta ? "" : undefined}>
             <Tooltip
               value={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
               placement="top"
