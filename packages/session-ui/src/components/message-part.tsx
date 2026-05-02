@@ -165,6 +165,7 @@ export interface MessageProps {
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
   useV2Actions?: boolean
+  alwaysShowMessageMeta?: boolean
 }
 
 export type SessionAction = (input: { sessionID: string; messageID: string }) => Promise<void> | void
@@ -187,6 +188,7 @@ export interface MessagePartProps {
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   useV2Actions?: boolean
+  alwaysShowMessageMeta?: boolean
 }
 
 function MessageActionButton(
@@ -902,6 +904,7 @@ export function Message(props: MessageProps) {
             parts={props.parts}
             actions={props.actions}
             useV2Actions={props.useV2Actions}
+            alwaysShowMessageMeta={props.alwaysShowMessageMeta}
           />
         )}
       </Match>
@@ -913,6 +916,7 @@ export function Message(props: MessageProps) {
             showAssistantCopyPartID={props.showAssistantCopyPartID}
             showReasoningSummaries={props.showReasoningSummaries}
             useV2Actions={props.useV2Actions}
+            alwaysShowMessageMeta={props.alwaysShowMessageMeta}
           />
         )}
       </Match>
@@ -926,6 +930,7 @@ export function AssistantMessageDisplay(props: {
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
   useV2Actions?: boolean
+  alwaysShowMessageMeta?: boolean
 }) {
   const emptyTools: ToolPart[] = []
   const part = createMemo(() => index(props.parts))
@@ -986,6 +991,7 @@ export function AssistantMessageDisplay(props: {
                       message={props.message}
                       showAssistantCopyPartID={props.showAssistantCopyPartID}
                       useV2Actions={props.useV2Actions}
+                      alwaysShowMessageMeta={props.alwaysShowMessageMeta}
                     />
                   </Show>
                 )
@@ -1111,6 +1117,7 @@ export function UserMessageDisplay(props: {
   parts: PartType[]
   actions?: UserActions
   useV2Actions?: boolean
+  alwaysShowMessageMeta?: boolean
 }) {
   const data = useData()
   const dialog = useDialog()
@@ -1148,7 +1155,7 @@ export function UserMessageDisplay(props: {
   const stamp = createMemo(() => {
     const created = props.message.time?.created
     if (typeof created !== "number") return ""
-    return timefmt().format(created)
+    return timefmt().format(created) + " · " + new Date(created).toLocaleDateString()
   })
 
   const metaHead = createMemo(() => {
@@ -1229,7 +1236,7 @@ export function UserMessageDisplay(props: {
               <HighlightedText text={text()} references={inlineFiles()} agents={agents()} />
             </div>
           </div>
-          <div data-slot="user-message-copy-wrapper">
+          <div data-slot="user-message-copy-wrapper" data-always-show-meta={props.alwaysShowMessageMeta ? "" : undefined}>
             <Show when={metaHead() || metaTail()}>
               <span data-slot="user-message-meta-wrap">
                 <Show when={metaHead()}>
@@ -1338,6 +1345,7 @@ export function Part(props: MessagePartProps) {
         showAssistantCopyPartID={props.showAssistantCopyPartID}
         turnDurationMs={props.turnDurationMs}
         useV2Actions={props.useV2Actions}
+        alwaysShowMessageMeta={props.alwaysShowMessageMeta}
       />
     </Show>
   )
@@ -1569,12 +1577,21 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     })
   })
 
+  const timefmt = createMemo(() => new Intl.DateTimeFormat(i18n.locale(), { timeStyle: "short" }))
+
+  const stamp = createMemo(() => {
+    const created = props.message.time?.created
+    if (typeof created !== "number") return ""
+    return timefmt().format(created) + " · " + new Date(created).toLocaleDateString()
+  })
+
   const meta = createMemo(() => {
     if (props.message.role !== "assistant") return ""
     const agent = (props.message as AssistantMessage).agent
     const items = [
       agent ? agent[0]?.toUpperCase() + agent.slice(1) : "",
       model(),
+      stamp(),
       duration(),
       interrupted() ? i18n.t("ui.message.interrupted") : "",
     ]
@@ -1617,7 +1634,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
           </Show>
         </div>
         <Show when={showCopy()}>
-          <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
+          <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined} data-always-show-meta={props.alwaysShowMessageMeta ? "" : undefined}>
             <MessageActionButton
               icon={copied() ? "check" : "copy"}
               label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
