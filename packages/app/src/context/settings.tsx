@@ -35,6 +35,7 @@ export interface Settings {
     showCustomAgents: boolean
     mobileTitlebarPosition: "top" | "bottom"
     newLayoutDesigns?: boolean
+    alwaysShowMessageMeta: boolean
   }
   appearance: {
     fontSize: number
@@ -120,6 +121,7 @@ const defaultSettings: Settings = {
     showSessionProgressBar: true,
     showCustomAgents: false,
     mobileTitlebarPosition: "top",
+    alwaysShowMessageMeta: false,
   },
   appearance: {
     fontSize: 14,
@@ -260,6 +262,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         newLayoutDesigns,
         setNewLayoutDesigns(value: boolean) {
           setStore("general", "newLayoutDesigns", value)
+        },
+        alwaysShowMessageMeta: withFallback(
+          () => store.general?.alwaysShowMessageMeta,
+          defaultSettings.general.alwaysShowMessageMeta,
+        ),
+        setAlwaysShowMessageMeta(value: boolean) {
+          setStore("general", "alwaysShowMessageMeta", value)
         },
       },
       visibility: {
