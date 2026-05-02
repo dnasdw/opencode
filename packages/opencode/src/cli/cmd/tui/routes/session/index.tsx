@@ -1351,6 +1351,7 @@ function UserMessage(props: {
   const [hover, setHover] = createSignal(false)
   const queued = createMemo(() => props.pending && props.message.id > props.pending)
   const color = createMemo(() => local.agent.color(props.message.agent))
+  const model = createMemo(() => Model.name(ctx.providers(), props.message.model.providerID, props.message.model.modelID))
   const queuedFg = createMemo(() => selectedForeground(theme, color()))
   const metadataVisible = createMemo(() => queued() || ctx.showTimestamps())
 
@@ -1405,8 +1406,10 @@ function UserMessage(props: {
               fallback={
                 <Show when={ctx.showTimestamps()}>
                   <text fg={theme.textMuted}>
+                    <span style={{ fg: color() }}>{Locale.titlecase(props.message.agent)}</span>
+                    <span style={{ fg: theme.textMuted }}> · {model()}</span>
                     <span style={{ fg: theme.textMuted }}>
-                      {Locale.todayTimeOrDateTime(props.message.time.created)}
+                      {" · "}{Locale.datetime(props.message.time.created)}
                     </span>
                   </text>
                 </Show>
@@ -1509,6 +1512,9 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
               </span>{" "}
               <span style={{ fg: theme.text }}>{Locale.titlecase(props.message.mode)}</span>
               <span style={{ fg: theme.textMuted }}> · {model()}</span>
+              <span style={{ fg: theme.textMuted }}>
+                {" · "}{Locale.datetime(props.message.time.created)}
+              </span>
               <Show when={duration()}>
                 <span style={{ fg: theme.textMuted }}> · {Locale.duration(duration())}</span>
               </Show>
