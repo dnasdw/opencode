@@ -966,6 +966,7 @@ export function MessageTimeline(props: {
                 deferToolContent
                 virtualizeDiff={false}
                 onContentRendered={onSizeChange}
+                alwaysShowMessageMeta={settings.general.alwaysShowMessageMeta()}
               />
             )}
           </Show>
@@ -1061,6 +1062,7 @@ export function MessageTimeline(props: {
                       message={message()}
                       parts={getMsgParts(userMessageRow().userMessageID)}
                       actions={props.actions}
+                      alwaysShowMessageMeta={settings.general.alwaysShowMessageMeta()}
                     />
                   </div>
                 </div>
