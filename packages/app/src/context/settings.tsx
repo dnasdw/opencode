@@ -34,6 +34,7 @@ export interface Settings {
     showSessionProgressBar: boolean
     showCustomAgents: boolean
     newLayoutDesigns?: boolean
+    alwaysShowMessageMeta: boolean
   }
   updates: {
     startup: boolean
@@ -121,6 +122,7 @@ const defaultSettings: Settings = {
     editToolPartsExpanded: false,
     showSessionProgressBar: true,
     showCustomAgents: false,
+    alwaysShowMessageMeta: false,
   },
   updates: {
     startup: true,
@@ -248,6 +250,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         newLayoutDesigns: withFallback(() => store.general?.newLayoutDesigns, newLayoutDesignsDefault),
         setNewLayoutDesigns(value: boolean) {
           setStore("general", "newLayoutDesigns", value)
+        },
+        alwaysShowMessageMeta: withFallback(
+          () => store.general?.alwaysShowMessageMeta,
+          defaultSettings.general.alwaysShowMessageMeta,
+        ),
+        setAlwaysShowMessageMeta(value: boolean) {
+          setStore("general", "alwaysShowMessageMeta", value)
         },
       },
       updates: {
