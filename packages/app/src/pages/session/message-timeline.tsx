@@ -1020,6 +1020,7 @@ export function MessageTimeline(props: {
                   settings.general.editToolPartsExpanded(),
                 )}
                 deferToolContent={false}
+                alwaysShowMessageMeta={settings.general.alwaysShowMessageMeta()}
               />
             )}
           </Show>
@@ -1112,7 +1113,7 @@ export function MessageTimeline(props: {
               {(message) => (
                 <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
                   <div data-slot="session-turn-message-content" aria-live="off">
-                    <Message message={message()} parts={getMsgParts(row.userMessageID)} actions={props.actions} />
+                    <Message message={message()} parts={getMsgParts(row.userMessageID)} actions={props.actions} alwaysShowMessageMeta={settings.general.alwaysShowMessageMeta()} />
                   </div>
                 </div>
               )}
