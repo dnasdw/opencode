@@ -352,6 +352,18 @@ export const SettingsGeneral: Component = () => {
             />
           </div>
         </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.row.alwaysShowMessageMeta.title")}
+          description={language.t("settings.general.row.alwaysShowMessageMeta.description")}
+        >
+          <div data-action="settings-always-show-message-meta">
+            <Switch
+              checked={settings.general.alwaysShowMessageMeta()}
+              onChange={(checked) => settings.general.setAlwaysShowMessageMeta(checked)}
+            />
+          </div>
+        </SettingsRow>
       </SettingsList>
     </div>
   )
