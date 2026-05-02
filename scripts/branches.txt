@@ -14,6 +14,7 @@
 feat/mycode-build
 feat/tui-message-limit
 feat/web-dialog-close-button
+feat/tui-message-meta
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
