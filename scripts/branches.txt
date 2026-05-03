@@ -16,6 +16,7 @@ feat/tui-message-limit
 feat/web-dialog-close-button
 feat/tui-message-meta
 feat/web-message-meta
+feat/web-show-todowrite-tool
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
