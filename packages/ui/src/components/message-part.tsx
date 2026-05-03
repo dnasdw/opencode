@@ -503,7 +503,7 @@ function taskSession(
 }
 
 const CONTEXT_GROUP_TOOLS = new Set(["read", "glob", "grep", "list"])
-const HIDDEN_TOOLS = new Set(["todowrite"])
+const HIDDEN_TOOLS = new Set<string>()
 
 function list<T>(value: T[] | undefined | null, fallback: T[]) {
   if (Array.isArray(value)) return value
@@ -1366,7 +1366,6 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const data = useData()
   const i18n = useI18n()
   const part = () => props.part as ToolPart
-  if (part().tool === "todowrite") return null
 
   const hideQuestion = createMemo(
     () => part().tool === "question" && (part().state.status === "pending" || part().state.status === "running"),
