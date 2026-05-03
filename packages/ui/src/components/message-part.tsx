@@ -1050,6 +1050,11 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
   const copied = () => state.copied
   const busy = () => state.busy
 
+  const borderColor = createMemo(() => {
+    const name = props.message.agent
+    return agentTones[name] ?? agentTones[name.toLowerCase()] ?? tone(name.toLowerCase())
+  })
+
   const textPart = createMemo(
     () => props.parts?.find((p) => p.type === "text" && !(p as TextPart).synthetic) as TextPart | undefined,
   )
@@ -1115,7 +1120,7 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
   }
 
   return (
-    <div data-component="user-message" data-timeline-part-id={textPart()?.id}>
+    <div data-component="user-message" data-timeline-part-id={textPart()?.id} style={{ "--user-message-border-color": borderColor() }}>
       <Show when={attachments().length > 0}>
         <div data-slot="user-message-attachments">
           <For each={attachments()}>
