@@ -128,15 +128,12 @@ const markBoundaryGesture = (input: {
   }
 }
 
-function TimelineThinkingRow(props: { reasoningHeading?: string; showReasoningSummaries: boolean }) {
+function TimelineThinkingRow(props: { reasoningHeading?: string }) {
   const language = useLanguage()
 
   return (
     <div data-slot="session-turn-thinking">
       <TextShimmer text={language.t("ui.sessionTurn.status.thinking")} />
-      <Show when={!props.showReasoningSummaries}>
-        <TextReveal text={props.reasoningHeading} class="session-turn-thinking-heading" travel={25} duration={700} />
-      </Show>
     </div>
   )
 }
@@ -1002,6 +999,7 @@ export function MessageTimeline(props: {
                 virtualizeDiff={false}
                 onContentRendered={onSizeChange}
                 alwaysShowMessageMeta={settings.general.alwaysShowMessageMeta()}
+                showReasoningSummaries={settings.general.showReasoningSummaries()}
               />
             )}
           </Show>
@@ -1144,7 +1142,6 @@ export function MessageTimeline(props: {
             <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
               <TimelineThinkingRow
                 reasoningHeading={thinkingRow().reasoningHeading}
-                showReasoningSummaries={settings.general.showReasoningSummaries()}
               />
             </div>
           </TimelineRowFrame>

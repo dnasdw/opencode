@@ -57,7 +57,7 @@ import { patchFiles } from "./apply-patch-file"
 import { animate } from "motion"
 import { useLocation } from "@solidjs/router"
 import { attached, inline, kind } from "./message-file"
-import { readPartText } from "./message-part-text"
+import { readPartText, reasoningSummary, formatDuration } from "./message-part-text"
 
 async function writeClipboard(text: string): Promise<boolean> {
   const body = typeof document === "undefined" ? undefined : document.body
@@ -184,6 +184,7 @@ export interface MessagePartProps {
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   alwaysShowMessageMeta?: boolean
+  showReasoningSummaries?: boolean
 }
 
 export type PartComponent = Component<MessagePartProps>
@@ -624,7 +625,7 @@ export function renderable(part: PartType, showReasoningSummaries = true) {
     return true
   }
   if (part.type === "text") return !!part.text?.trim()
-  if (part.type === "reasoning") return showReasoningSummaries && !!part.text?.trim()
+  if (part.type === "reasoning") return !!part.text?.trim()
   return !!PART_MAPPING[part.type]
 }
 
@@ -726,6 +727,7 @@ export function AssistantParts(props: {
                         message={message()!}
                         showAssistantCopyPartID={props.showAssistantCopyPartID}
                         turnDurationMs={props.turnDurationMs}
+                        showReasoningSummaries={props.showReasoningSummaries}
                         defaultOpen={partDefaultOpen(item()!, props.shellToolDefaultOpen, props.editToolDefaultOpen)}
                       />
                     </Show>
@@ -937,6 +939,7 @@ export function AssistantMessageDisplay(props: {
                       message={props.message}
                       showAssistantCopyPartID={props.showAssistantCopyPartID}
                       alwaysShowMessageMeta={props.alwaysShowMessageMeta}
+                      showReasoningSummaries={props.showReasoningSummaries}
                     />
                   </Show>
                 )
@@ -1297,6 +1300,7 @@ export function Part(props: MessagePartProps) {
         showAssistantCopyPartID={props.showAssistantCopyPartID}
         turnDurationMs={props.turnDurationMs}
         alwaysShowMessageMeta={props.alwaysShowMessageMeta}
+        showReasoningSummaries={props.showReasoningSummaries}
       />
     </Show>
   )
@@ -1618,12 +1622,57 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
     () => props.message.role === "assistant" && typeof (props.message as AssistantMessage).time.completed !== "number",
   )
   const text = () => readPartText(data.store.part_text_accum_delta, part())
+  const isDone = createMemo(() => part().time.end !== undefined)
+  const summary = createMemo(() => reasoningSummary(text()))
+  const duration = createMemo(() => {
+    if (!isDone() || part().time.end === undefined || part().time.start === undefined) return undefined
+    return formatDuration(part().time.end - part().time.start)
+  })
+  const show = createMemo(() => props.showReasoningSummaries ?? true)
+  const [expanded, setExpanded] = createSignal(false)
+  const toggleable = createMemo(() => !show())
+  const open = createMemo(() => show() || expanded())
 
   return (
     <Show when={text()}>
       <div data-component="reasoning-part" data-timeline-part-id={part().id}>
-        <Show when={streaming()} fallback={<Markdown text={text()} cacheKey={part().id} streaming={false} />}>
-          <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+        <div
+          data-component="reasoning-header"
+          data-reasoning-open={open() ? "true" : "false"}
+          onClick={() => toggleable() && setExpanded((prev) => !prev)}
+        >
+          <Show
+            when={!isDone()}
+            fallback={
+              <span data-reasoning-state="done">
+                <Show when={toggleable()}>
+                  <span data-reasoning-toggle>{open() ? "- " : "+ "}</span>
+                </Show>
+                <span>Thought</span>
+                <Show when={summary().title || duration()}>
+                  <span>{": "}</span>
+                </Show>
+                <Show when={summary().title}>
+                  <span>{summary().title}</span>
+                </Show>
+                <Show when={duration()}>
+                  <span>
+                    {summary().title ? " · " : ""}
+                    {duration()}
+                  </span>
+                </Show>
+              </span>
+            }
+          >
+            <TextShimmer text={summary().title ? "Thinking: " + summary().title : "Thinking"} active={true} />
+          </Show>
+        </div>
+        <Show when={open() && summary().body}>
+          <div data-component="reasoning-body">
+            <Show when={streaming()} fallback={<Markdown text={summary().body ?? ""} cacheKey={part().id} streaming={false} />}>
+              <PacedMarkdown text={summary().body ?? ""} cacheKey={part().id} streaming={streaming()} />
+            </Show>
+          </div>
         </Show>
       </div>
     </Show>
