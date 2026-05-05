@@ -1528,12 +1528,13 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
     () => props.message.role === "assistant" && typeof (props.message as AssistantMessage).time.completed !== "number",
   )
   const text = () => (data.store.part_text_accum_delta?.[part().id] ?? part().text).trim()
+  const displayText = () => "_Thinking:_ " + text()
 
   return (
     <Show when={text()}>
       <div data-component="reasoning-part">
-        <Show when={streaming()} fallback={<Markdown text={text()} cacheKey={part().id} streaming={false} />}>
-          <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+        <Show when={streaming()} fallback={<Markdown text={displayText()} cacheKey={part().id} streaming={false} />}>
+          <PacedMarkdown text={displayText()} cacheKey={part().id} streaming={streaming()} />
         </Show>
       </div>
     </Show>
