@@ -293,17 +293,14 @@
   width: 100%;
   color: var(--text-base);
   line-height: var(--line-height-normal);
+  border-left: 3px solid var(--border-weaker-base);
+  padding-left: 12px;
 
   [data-component="markdown"] {
     margin-top: 16px;
     font-style: normal;
     font-size: 13px;
     color: var(--text-weak);
-
-    strong,
-    b {
-      color: var(--text-weak);
-    }
 
     p:has(strong) {
       margin-top: 24px;
