@@ -82,6 +82,69 @@ const iconPaths = {
   check: '<path d="M5 11.9657L8.37838 14.7529L15 5.83398" stroke="currentColor" stroke-linecap="square"/>',
 }
 
+// Tags that DOMPurify will allow through — do NOT escape these.
+// Must stay in sync with DOMPurify config: USE_PROFILES: { html: true, mathMl: true }, FORBID_TAGS: ["style"]
+// Source: dompurify@3.3.1 dist/purify.es.mjs — html$1 array + mathMl$1 array
+// Note: "style" is excluded because FORBID_TAGS removes it AND FORBID_CONTENTS removes its content,
+// causing message truncation. Keep it out so escapeCustomTags converts <style> to &lt;style&gt;.
+const ALLOWED_TAGS = new Set([
+  // HTML profile (118 tags, excluding "style" which is in FORBID_TAGS + FORBID_CONTENTS)
+  "a", "abbr", "acronym", "address", "area", "article", "aside", "audio",
+  "b", "bdi", "bdo", "big", "blink", "blockquote", "body", "br", "button",
+  "canvas", "caption", "center", "cite", "code", "col", "colgroup", "content",
+  "data", "datalist", "dd", "decorator", "del", "details", "dfn", "dialog", "dir",
+  "div", "dl", "dt", "element",
+  "em",
+  "fieldset", "figcaption", "figure", "font", "footer", "form",
+  "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html",
+  "i", "img", "input", "ins",
+  "kbd",
+  "label", "legend", "li",
+  "main", "map", "mark", "marquee", "menu", "menuitem", "meter",
+  "nav", "nobr",
+  "ol", "optgroup", "option", "output",
+  "p", "picture", "pre", "progress",
+  "q",
+  "rp", "rt", "ruby",
+  "s", "samp", "search", "section", "select", "shadow", "slot", "small",
+  "source", "spacer", "span", "strike", "strong", "sub", "summary", "sup",
+  "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead",
+  "time", "tr", "track", "tt",
+  "u", "ul",
+  "var", "video",
+  "wbr",
+  // MathML profile (30 tags)
+  "math", "menclose", "merror", "mfenced", "mfrac", "mglyph", "mi", "mlabeledtr",
+  "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom", "mprescripts",
+  "mroot", "mrow", "ms", "mspace", "msqrt", "mstyle", "msub", "msubsup", "msup",
+  "mtable", "mtd", "mtext", "mtr", "munder", "munderover",
+])
+
+const TAG_NAME = "[A-Za-z][A-Za-z0-9_-]*"
+const TAG_RE = new RegExp(`<\\/?(${TAG_NAME})(\\s[^>]*)?\\/?>`, "g")
+const CODE_BLOCK_RE = /(```[\s\S]*?```|`[^`\n]*`)/g
+const STANDALONE_ESCAPED_TAG_RE = new RegExp(`^[ \\t]*&lt;\\/?${TAG_NAME}(?:\\s[^&]*?)?&gt;[ \\t]*$`, "gm")
+
+function escapeCustomTags(text: string): string {
+  const parts = text.split(CODE_BLOCK_RE)
+  return parts
+    .map((part, i) => {
+      if (i % 2 === 1) return part
+
+      // Escape custom tags (non-HTML)
+      let result = part.replace(TAG_RE, (match, tagName) => {
+        if (ALLOWED_TAGS.has(tagName.toLowerCase())) return match
+        return match.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      })
+
+      // Blank lines around standalone escaped tags so they get their own paragraph
+      result = result.replace(STANDALONE_ESCAPED_TAG_RE, "\n$&\n")
+
+      return result
+    })
+    .join("")
+}
+
 function sanitize(html: string) {
   if (!DOMPurify.isSupported) return ""
   return DOMPurify.sanitize(html, config)
@@ -337,13 +400,14 @@ export function Markdown(
   const owner = createUniqueId()
   const activeCodeKeys = new Set<string>()
   const completedCode = new Map<string, Extract<RenderedBlock, { mode: "code" }>>()
+  const escapedText = createMemo(() => escapeCustomTags(local.text))
   const projection = createMemo((previous: Projection | undefined) =>
-    project(previous, local.text, local.streaming ?? false),
+    project(previous, escapedText(), local.streaming ?? false),
   )
   const [html] = createResource(
     () => {
       return {
-        text: local.text,
+        text: escapedText(),
         key: local.cacheKey,
         projection: projection(),
       }
@@ -418,7 +482,7 @@ export function Markdown(
         )
     },
     {
-      initialValue: initialResult(local.text, local.cacheKey, projection(), owner),
+      initialValue: initialResult(escapedText(), local.cacheKey, projection(), owner),
     },
   )
 
