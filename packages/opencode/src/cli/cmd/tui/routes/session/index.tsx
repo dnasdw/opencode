@@ -84,6 +84,7 @@ import { formatTranscript } from "../../util/transcript"
 import { UI } from "@/cli/ui.ts"
 import { useTuiConfig } from "../../context/tui-config"
 import { getScrollAcceleration } from "../../util/scroll"
+import { escapeSolidContent } from "../../util/escape-solid-content"
 import { TuiPluginRuntime } from "@/cli/cmd/tui/plugin/runtime"
 import { DialogRetryAction } from "../../component/dialog-retry-action"
 import { SessionRetry } from "@/session/retry"
@@ -1517,7 +1518,7 @@ function ReasoningPart(props: { last: boolean; part: ReasoningPart; message: Ass
           drawUnstyledText={false}
           streaming={true}
           syntaxStyle={subtleSyntax()}
-          content={"_Thinking:_ " + content()}
+          content={"_Thinking:_ " + escapeSolidContent(content())}
           conceal={ctx.conceal()}
           fg={theme.textMuted}
         />
@@ -1537,7 +1538,7 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
             <markdown
               syntaxStyle={syntax()}
               streaming={true}
-              content={props.part.text.trim()}
+              content={escapeSolidContent(props.part.text.trim())}
               conceal={ctx.conceal()}
               fg={theme.markdownText}
               bg={theme.background}
@@ -1549,7 +1550,7 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
               drawUnstyledText={false}
               streaming={true}
               syntaxStyle={syntax()}
-              content={props.part.text.trim()}
+              content={escapeSolidContent(props.part.text.trim())}
               conceal={ctx.conceal()}
               fg={theme.text}
             />
@@ -1915,7 +1916,7 @@ function Write(props: ToolProps<typeof WriteTool>) {
               fg={theme.text}
               filetype={filetype(props.input.filePath!)}
               syntaxStyle={syntax()}
-              content={code()}
+              content={escapeSolidContent(code())}
             />
           </line_number>
           <Diagnostics diagnostics={props.metadata.diagnostics} filePath={props.input.filePath ?? ""} />
