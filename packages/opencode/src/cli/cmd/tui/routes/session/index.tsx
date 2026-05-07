@@ -84,6 +84,7 @@ import { useTuiConfig } from "../../context/tui-config"
 import { nextThinkingMode, reasoningSummary, useThinkingMode, type ThinkingMode } from "../../context/thinking"
 import { getScrollAcceleration } from "../../util/scroll"
 import { collapseToolOutput } from "../../util/collapse-tool-output"
+import { escapeSolidContent } from "../../util/escape-solid-content"
 import { TuiPluginRuntime } from "@/cli/cmd/tui/plugin/runtime"
 import { DialogRetryAction } from "../../component/dialog-retry-action"
 import { SessionRetry } from "@/session/retry"
@@ -1550,7 +1551,7 @@ function ReasoningPart(props: { last: boolean; part: ReasoningPart; message: Ass
               drawUnstyledText={false}
               streaming={true}
               syntaxStyle={syntax()}
-              content={summary().body}
+              content={escapeSolidContent(summary().body)}
               conceal={ctx.conceal()}
               fg={theme.textMuted}
             />
@@ -1606,7 +1607,7 @@ function TextPart(props: { last: boolean; part: TextPart; message: AssistantMess
           syntaxStyle={syntax()}
           streaming={true}
           internalBlockMode="top-level"
-          content={props.part.text.trim()}
+          content={escapeSolidContent(props.part.text.trim())}
           tableOptions={{ style: "grid" }}
           conceal={ctx.conceal()}
           fg={theme.markdownText}
@@ -1964,7 +1965,7 @@ function Write(props: ToolProps<typeof WriteTool>) {
               fg={theme.text}
               filetype={filetype(props.input.filePath!)}
               syntaxStyle={syntax()}
-              content={code()}
+              content={escapeSolidContent(code())}
             />
           </line_number>
           <Diagnostics diagnostics={props.metadata.diagnostics} filePath={props.input.filePath ?? ""} />
