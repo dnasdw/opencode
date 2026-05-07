@@ -30,6 +30,7 @@ import type {
   ToolTextContent,
 } from "@opencode-ai/sdk/v2"
 import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
+import { escapeSolidContent } from "@tui/util/escape-solid-content"
 
 const id = "internal:session-v2-debug"
 const route = "session.v2.messages"
@@ -244,7 +245,7 @@ function CompactionMessage(props: { message: SessionMessageCompaction }) {
               drawUnstyledText={false}
               streaming={false}
               syntaxStyle={syntax()}
-              content={summary().trim()}
+              content={escapeSolidContent(summary().trim())}
               conceal={true}
               fg={theme.text}
             />
@@ -374,7 +375,7 @@ function AssistantText(props: { part: SessionMessageAssistantText; syntax: Synta
           drawUnstyledText={false}
           streaming={true}
           syntaxStyle={props.syntax}
-          content={props.part.text.trim()}
+          content={escapeSolidContent(props.part.text.trim())}
           conceal={true}
           fg={theme.text}
         />
@@ -422,7 +423,7 @@ function AssistantReasoning(props: {
               drawUnstyledText={false}
               streaming={true}
               syntaxStyle={props.subtleSyntax}
-              content={(inMinimal() ? "▼ " : "") + "_Thinking:_ " + content()}
+              content={(inMinimal() ? "▼ " : "") + "_Thinking:_ " + escapeSolidContent(content())}
               conceal={true}
               fg={theme.textMuted}
             />
@@ -833,7 +834,7 @@ function Write(props: ToolProps) {
               fg={theme.text}
               filetype={filetype(filePath())}
               syntaxStyle={syntax()}
-              content={content()}
+              content={escapeSolidContent(content())}
             />
           </line_number>
           <Diagnostics diagnostics={props.metadata.diagnostics} filePath={filePath()} />
