@@ -25,6 +25,7 @@ feat/web-reasoning-part-tui-style
 # Fixes
 # ============================================================
 fix/web-markdown-custom-tags
+fix/tui-html-entity-encoding
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
