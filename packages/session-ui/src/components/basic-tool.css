@@ -277,3 +277,20 @@ body:not([data-new-layout]) {
     }
   }
 }
+
+/*
+ * Shrink the clickable area of link-wrapped task tool cards to match the
+ * card border. Only applies when the collapsible trigger is rendered as an
+ * <a> tag (has [href]) and details are hidden (no collapsible arrow).
+ *
+ * Without [data-hide-details="true"] the arrow is visible and the trigger
+ * must stay full-width to accommodate it. The max-width override removes
+ * the 24px arrow reservation from trigger-content since no arrow is shown.
+ */
+[data-slot="collapsible-trigger"][href][data-hide-details="true"] {
+  width: fit-content;
+
+  [data-slot="basic-tool-tool-trigger-content"] {
+    max-width: 100%;
+  }
+}
