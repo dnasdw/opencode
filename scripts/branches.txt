@@ -19,6 +19,7 @@ feat/web-message-meta
 feat/web-show-todowrite-tool
 feat/web-user-message-border
 feat/web-markdown-tui-theme-colors
+feat/web-reasoning-part-tui-style
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
