@@ -29,6 +29,7 @@ feat/web-tool-display
 # ============================================================
 fix/web-markdown-custom-tags
 fix/tui-html-entity-encoding
+fix/web-subagent-card-click-area
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
