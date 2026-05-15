@@ -62,7 +62,7 @@
   h5,
   h6 {
     font-size: 13px;
-    color: var(--v2-text-text-muted);
+    color: var(--markdown-heading);
     font-weight: var(--font-weight-medium);
     margin-top: 0px;
     margin-bottom: 24px;
@@ -72,8 +72,13 @@
   /* Emphasis & Strong: Neutral strong color */
   strong,
   b {
-    color: var(--v2-text-text-base);
+    color: var(--markdown-strong);
     font-weight: var(--font-weight-medium);
+  }
+
+  em,
+  i {
+    color: var(--markdown-emph);
   }
 
   /* Paragraphs */
@@ -127,7 +132,7 @@
   }
 
   li::marker {
-    color: var(--v2-text-text-muted);
+    color: var(--markdown-list-item);
   }
 
   /* Nested lists spacing */
@@ -147,14 +152,14 @@
     border-left: 0.5px solid var(--v2-border-border-base);
     margin: 1.5rem 0;
     padding-left: 0.5rem;
-    color: var(--v2-text-text-muted);
-    font-style: normal;
+    color: var(--markdown-block-quote);
+    font-style: italic;
   }
 
-  /* Horizontal Rule - Invisible spacing only */
+  /* Horizontal Rule */
   hr {
     border: none;
-    height: 0;
+    border-top: 1px solid var(--markdown-horizontal-rule);
     margin: 40px 0;
   }
 
@@ -268,7 +273,7 @@
   :not(pre) > code {
     font-family: var(--font-family-mono);
     font-feature-settings: var(--font-family-mono--font-feature-settings);
-    color: var(--v2-text-text-base);
+    color: var(--markdown-code);
     font-weight: var(--font-weight-medium);
     padding: 2px 4px;
     border-radius: 4px;
@@ -298,23 +303,22 @@
     border-collapse: collapse;
     margin: 24px 0;
     font-size: var(--font-size-base);
-    display: block;
-    overflow-x: auto;
+    table-layout: auto;
   }
 
   th,
   td {
-    /* Minimal borders for structure, matching TUI "lines" roughly but keeping it web-clean */
-    border-bottom: 0.5px solid var(--v2-border-border-muted);
+    border: 1px solid var(--text-weak);
     padding: 12px;
     text-align: left;
     vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   th {
-    color: var(--v2-text-text-base);
+    color: var(--markdown-heading);
     font-weight: var(--font-weight-medium);
-    border-bottom: 0.5px solid var(--v2-border-border-base);
   }
 
   /* Images */
