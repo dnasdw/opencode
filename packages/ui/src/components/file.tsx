@@ -1134,23 +1134,33 @@ function DiffViewer<T>(props: DiffFileProps<T>) {
       },
       draw: (value) => {
         if (local.fileDiff) {
+          const fileContainer =
+            (viewer.container.querySelector("diffs-container") as HTMLElement | null) ??
+            document.createElement("diffs-container")
+          if (!fileContainer.parentNode) viewer.container.appendChild(fileContainer)
           value.render({
             fileDiff: local.fileDiff,
             forceRender,
             lineAnnotations: [],
             containerWrapper: viewer.container,
+            fileContainer,
           })
           return
         }
 
         if (!before || !after) return
 
+        const fileContainer =
+          (viewer.container.querySelector("diffs-container") as HTMLElement | null) ??
+          document.createElement("diffs-container")
+        if (!fileContainer.parentNode) viewer.container.appendChild(fileContainer)
         value.render({
           oldFile: before,
           newFile: after,
           forceRender,
           lineAnnotations: [],
           containerWrapper: viewer.container,
+          fileContainer,
         })
       },
       onReady: () => notify(done),
