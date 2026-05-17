@@ -488,11 +488,10 @@ function renderViewer<I extends RenderTarget>(opts: {
   onReady: () => void
 }) {
   clearReadyWatcher(opts.viewer.ready)
-  opts.current?.cleanUp()
+  const prev = opts.current
   const next = opts.create()
   opts.assign(next)
-
-  opts.viewer.container.innerHTML = ""
+  prev?.cleanUp()
   opts.draw(next)
 
   applyViewerScheme(opts.viewer.getHost())
@@ -1079,21 +1078,27 @@ function DiffViewer<T>(props: DiffFileProps<T>) {
       },
       draw: (value) => {
         if (local.fileDiff) {
+          const fileContainer = document.createElement("diffs-container")
+          viewer.container.appendChild(fileContainer)
           value.render({
             fileDiff: local.fileDiff,
             lineAnnotations: [],
             containerWrapper: viewer.container,
+            fileContainer,
           })
           return
         }
 
         if (!local.before || !local.after) return
 
+        const fileContainer = document.createElement("diffs-container")
+        viewer.container.appendChild(fileContainer)
         value.render({
           oldFile: { ...local.before, contents: beforeContents, cacheKey: cacheKey(beforeContents) },
           newFile: { ...local.after, contents: afterContents, cacheKey: cacheKey(afterContents) },
           lineAnnotations: [],
           containerWrapper: viewer.container,
+          fileContainer,
         })
       },
       onReady: () => notify(done),
