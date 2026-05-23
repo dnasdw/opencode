@@ -220,18 +220,14 @@ export function BasicTool(props: BasicToolProps) {
                         </span>
                       </Show>
                       <Show when={title().args?.length}>
-                        <For each={title().args}>
-                          {(arg) => (
-                            <span
-                              data-slot="basic-tool-tool-arg"
-                              classList={{
-                                [title().argsClass ?? ""]: !!title().argsClass,
-                              }}
-                            >
-                              {arg}
-                            </span>
-                          )}
-                        </For>
+                        <span
+                          data-slot="basic-tool-tool-arg"
+                          classList={{
+                            [title().argsClass ?? ""]: !!title().argsClass,
+                          }}
+                        >
+                          [{title().args!.join(", ")}]
+                        </span>
                       </Show>
                     </Show>
                   </div>
@@ -316,6 +312,14 @@ function args(input: Record<string, unknown> | undefined) {
     .slice(0, 3)
 }
 
+export function inputArgs(input: Record<string, unknown> | undefined, omit?: string[]): string[] {
+  if (!input) return []
+  return Object.entries(input).filter(([key, value]) => {
+    if (omit?.includes(key)) return false
+    return typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+  }).map(([key, value]) => `${key}=${value}`)
+}
+
 export function GenericTool(props: {
   tool: string
   status?: string
@@ -330,8 +334,7 @@ export function GenericTool(props: {
       status={props.status}
       trigger={{
         title: i18n.t("ui.basicTool.called", { tool: props.tool }),
-        subtitle: label(props.input),
-        args: args(props.input),
+        args: inputArgs(props.input),
       }}
       hideDetails={props.hideDetails}
     />
