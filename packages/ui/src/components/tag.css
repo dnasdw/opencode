@@ -10,7 +10,7 @@
   color: var(--text-base);
 
   &[data-size="normal"] {
-    height: 18px;
+    min-height: 18px;
     padding: 0 6px;
 
     /* text-12-medium */
@@ -23,7 +23,7 @@
   }
 
   &[data-size="large"] {
-    height: 22px;
+    min-height: 22px;
     padding: 0 8px;
 
     /* text-14-medium */
