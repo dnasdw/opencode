@@ -222,8 +222,8 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
     <header
       classList={{
         "shrink-0 relative overflow-hidden flex flex-row": true,
-        "h-11 bg-v2-background-bg-deep": useV2Titlebar(),
-        "h-10 bg-background-base": !useV2Titlebar(),
+        "min-h-11 bg-v2-background-bg-deep": useV2Titlebar(),
+        "min-h-10 bg-background-base": !useV2Titlebar(),
       }}
       style={{
         "min-height": minHeight(),
