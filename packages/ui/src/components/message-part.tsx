@@ -13,6 +13,7 @@ import {
   type JSX,
 } from "solid-js"
 import { createStore } from "solid-js/store"
+import { createMediaQuery } from "@solid-primitives/media"
 import stripAnsi from "strip-ansi"
 import { Dynamic } from "solid-js/web"
 import {
@@ -34,7 +35,7 @@ import { useData } from "../context"
 import { useFileComponent } from "../context/file"
 import { useDialog } from "../context/dialog"
 import { type UiI18n, useI18n } from "../context/i18n"
-import { BasicTool, GenericTool } from "./basic-tool"
+import { BasicTool, GenericTool, inputArgs } from "./basic-tool"
 import { Accordion } from "./accordion"
 import { StickyAccordionHeader } from "./sticky-accordion-header"
 import { Collapsible } from "./collapsible"
@@ -255,12 +256,17 @@ function relativizeProjectPath(path: string, directory?: string) {
   const separator = directory.includes("\\") ? "\\" : "/"
   const prefix = directory.endsWith(separator) ? directory : directory + separator
   if (!path.startsWith(prefix)) return path
-  return path.slice(directory.length)
+  return path.slice(prefix.length)
 }
 
 function getDirectory(path: string | undefined) {
   const data = useData()
   return relativizeProjectPath(_getDirectory(path), data.directory)
+}
+
+function getRelativePath(filePath: string | undefined) {
+  const data = useData()
+  return relativizeProjectPath(filePath ?? "", data.directory)
 }
 
 import type { IconProps } from "./icon"
@@ -324,7 +330,7 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
       return {
         icon: "glasses",
         title: i18n.t("ui.tool.read"),
-        subtitle: input.filePath ? getFilename(input.filePath) : undefined,
+        subtitle: input.filePath ? getRelativePath(input.filePath) : undefined,
       }
     case "list":
       return {
@@ -377,13 +383,13 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
       return {
         icon: "code-lines",
         title: i18n.t("ui.messagePart.title.edit"),
-        subtitle: input.filePath ? getFilename(input.filePath) : undefined,
+        subtitle: input.filePath ? getRelativePath(input.filePath) : undefined,
       }
     case "write":
       return {
         icon: "code-lines",
         title: i18n.t("ui.messagePart.title.write"),
-        subtitle: input.filePath ? getFilename(input.filePath) : undefined,
+        subtitle: input.filePath ? getRelativePath(input.filePath) : undefined,
       }
     case "apply_patch":
       return {
@@ -718,20 +724,22 @@ function contextToolTrigger(part: ToolPart, i18n: ReturnType<typeof useI18n>) {
       if (limit !== undefined) args.push("limit=" + limit)
       return {
         title: i18n.t("ui.tool.read"),
-        subtitle: filePath ? getFilename(filePath) : "",
-        args,
+        subtitle: filePath ? getRelativePath(filePath) : "",
+        args: inputArgs(input, ["filePath"]),
       }
     }
     case "list":
       return {
         title: i18n.t("ui.tool.list"),
-        subtitle: getDirectory(path),
+        subtitle: getRelativePath(path),
       }
     case "glob":
       return {
         title: i18n.t("ui.tool.glob"),
-        subtitle: getDirectory(path),
-        args: pattern ? ["pattern=" + pattern] : [],
+        subtitle: [
+          pattern ? `"${pattern}"` : null,
+          path && path !== "/" ? `in ${getRelativePath(path)}` : null,
+        ].filter(Boolean).join(" "),
       }
     case "grep": {
       const args: string[] = []
@@ -739,8 +747,11 @@ function contextToolTrigger(part: ToolPart, i18n: ReturnType<typeof useI18n>) {
       if (include) args.push("include=" + include)
       return {
         title: i18n.t("ui.tool.grep"),
-        subtitle: getDirectory(path),
-        args,
+        subtitle: [
+          pattern ? `"${pattern}"` : null,
+          path && path !== "/" ? `in ${getRelativePath(path)}` : null,
+          include ? `[${include}]` : null,
+        ].filter(Boolean).join(" "),
       }
     }
     default: {
@@ -891,7 +902,8 @@ export function AssistantMessageDisplay(props: {
 
 function ContextToolGroup(props: { parts: ToolPart[]; busy?: boolean }) {
   const i18n = useI18n()
-  const [open, setOpen] = createSignal(false)
+  const data = useData()
+  const [open, setOpen] = createSignal(true)
   const pending = createMemo(
     () =>
       !!props.busy || props.parts.some((part) => part.state.status === "pending" || part.state.status === "running"),
@@ -954,6 +966,15 @@ function ContextToolGroup(props: { parts: ToolPart[]; busy?: boolean }) {
               const running = createMemo(
                 () => partAccessor().state.status === "pending" || partAccessor().state.status === "running",
               )
+              const loaded = createMemo(() => {
+                const part = partAccessor()
+                if (part.tool !== "read") return []
+                if (part.state.status !== "completed") return []
+                if (part.state.time.compacted) return []
+                const value = part.state.metadata?.loaded
+                if (!value || !Array.isArray(value)) return []
+                return value.filter((p): p is string => typeof p === "string")
+              })
               return (
                 <div data-slot="context-tool-group-item">
                   <div data-component="tool-trigger">
@@ -968,15 +989,23 @@ function ContextToolGroup(props: { parts: ToolPart[]; busy?: boolean }) {
                               <span data-slot="basic-tool-tool-subtitle">{trigger().subtitle}</span>
                             </Show>
                             <Show when={!running() && trigger().args?.length}>
-                              <For each={trigger().args}>
-                                {(arg) => <span data-slot="basic-tool-tool-arg">{arg}</span>}
-                              </For>
+                              <span data-slot="basic-tool-tool-arg">[{trigger().args!.join(", ")}]</span>
                             </Show>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  <For each={loaded()}>
+                    {(filepath) => (
+                      <div data-component="tool-loaded-file">
+                        <Icon name="enter" size="small" />
+                        <span>
+                          {i18n.t("ui.tool.loaded")} {relativizeProjectPath(filepath, data.directory)}
+                        </span>
+                      </div>
+                    )}
+                  </For>
                 </div>
               )
             }}
@@ -1542,7 +1571,7 @@ ToolRegistry.register({
           icon="glasses"
           trigger={{
             title: i18n.t("ui.tool.read"),
-            subtitle: props.input.filePath ? getFilename(props.input.filePath) : "",
+            subtitle: props.input.filePath ? getRelativePath(props.input.filePath) : "",
             args,
           }}
         />
@@ -1569,7 +1598,7 @@ ToolRegistry.register({
       <BasicTool
         {...props}
         icon="bullet-list"
-        trigger={{ title: i18n.t("ui.tool.list"), subtitle: getDirectory(props.input.path || "/") }}
+        trigger={{ title: i18n.t("ui.tool.list"), subtitle: getRelativePath(props.input.path || "/") }}
       >
         <Show when={props.output}>
           <div data-component="tool-output" data-scrollable>
@@ -1591,8 +1620,11 @@ ToolRegistry.register({
         icon="magnifying-glass-menu"
         trigger={{
           title: i18n.t("ui.tool.glob"),
-          subtitle: getDirectory(props.input.path || "/"),
-          args: props.input.pattern ? ["pattern=" + props.input.pattern] : [],
+          subtitle: [
+            props.input.pattern ? `"${props.input.pattern}"` : null,
+            props.input.path ? `in ${getRelativePath(props.input.path)}` : null,
+            props.metadata.count != null ? `(${props.metadata.count} ${props.metadata.count === 1 ? "match" : "matches"})` : null,
+          ].filter(Boolean).join(" "),
         }}
       >
         <Show when={props.output}>
@@ -1618,8 +1650,12 @@ ToolRegistry.register({
         icon="magnifying-glass-menu"
         trigger={{
           title: i18n.t("ui.tool.grep"),
-          subtitle: getDirectory(props.input.path || "/"),
-          args,
+          subtitle: [
+            props.input.pattern ? `"${props.input.pattern}"` : null,
+            props.input.path ? `in ${getRelativePath(props.input.path)}` : null,
+            props.input.include ? `[${props.input.include}]` : null,
+            props.metadata.matches != null ? `(${props.metadata.matches} ${props.metadata.matches === 1 ? "match" : "matches"})` : null,
+          ].filter(Boolean).join(" "),
         }}
       >
         <Show when={props.output}>
@@ -1806,6 +1842,14 @@ ToolRegistry.register({
       setTimeout(() => setCopied(false), 2000)
     }
 
+    const workdir = (() => {
+      const wd = props.input.workdir
+      if (!wd || wd === ".") return undefined
+      const rel = getRelativePath(wd)
+      if (!rel) return undefined
+      return rel
+    })()
+
     return (
       <BasicTool
         {...props}
@@ -1818,6 +1862,9 @@ ToolRegistry.register({
               </span>
               <Show when={!pending() && props.input.description}>
                 <ShellSubmessage text={props.input.description} animate={sawPending} />
+              </Show>
+              <Show when={workdir}>
+                <span data-slot="basic-tool-tool-subtitle">in {workdir}</span>
               </Show>
             </div>
           </div>
@@ -1856,9 +1903,10 @@ ToolRegistry.register({
   render(props) {
     const i18n = useI18n()
     const fileComponent = useFileComponent()
+    const wide = createMediaQuery("(min-width: 768px)")
     const diagnostics = createMemo(() => getDiagnostics(props.metadata.diagnostics, props.input.filePath))
     const path = createMemo(() => props.metadata?.filediff?.file || props.input.filePath || "")
-    const filename = () => getFilename(props.input.filePath ?? "")
+    const filename = () => getRelativePath(props.input.filePath ?? "")
     const pending = () => props.status === "pending" || props.status === "running"
     return (
       <div data-component="edit-tool">
@@ -1877,11 +1925,6 @@ ToolRegistry.register({
                     <span data-slot="message-part-title-filename">{filename()}</span>
                   </Show>
                 </div>
-                <Show when={!pending() && props.input.filePath?.includes("/")}>
-                  <div data-slot="message-part-path">
-                    <span data-slot="message-part-directory">{getDirectory(props.input.filePath!)}</span>
-                  </div>
-                </Show>
               </div>
               <div data-slot="message-part-actions">
                 <Show when={!pending() && props.metadata.filediff}>
@@ -1904,6 +1947,7 @@ ToolRegistry.register({
                 <Dynamic
                   component={fileComponent}
                   mode="diff"
+                  diffStyle={wide() ? "split" : "unified"}
                   before={{
                     name: props.metadata?.filediff?.file || props.input.filePath,
                     contents: props.metadata?.filediff?.before || props.input.oldString || "",
@@ -1930,7 +1974,7 @@ ToolRegistry.register({
     const fileComponent = useFileComponent()
     const diagnostics = createMemo(() => getDiagnostics(props.metadata.diagnostics, props.input.filePath))
     const path = createMemo(() => props.input.filePath || "")
-    const filename = () => getFilename(props.input.filePath ?? "")
+    const filename = () => getRelativePath(props.input.filePath ?? "")
     const pending = () => props.status === "pending" || props.status === "running"
     return (
       <div data-component="write-tool">
@@ -1949,11 +1993,6 @@ ToolRegistry.register({
                     <span data-slot="message-part-title-filename">{filename()}</span>
                   </Show>
                 </div>
-                <Show when={!pending() && props.input.filePath?.includes("/")}>
-                  <div data-slot="message-part-path">
-                    <span data-slot="message-part-directory">{getDirectory(props.input.filePath!)}</span>
-                  </div>
-                </Show>
               </div>
               <div data-slot="message-part-actions">{/* <DiffChanges diff={diff} /> */}</div>
             </div>
@@ -2257,7 +2296,34 @@ ToolRegistry.register({
                 return (
                   <div data-slot="question-answer-item">
                     <div data-slot="question-text">{q.question}</div>
-                    <div data-slot="answer-text">{answer().join(", ") || i18n.t("ui.question.answer.none")}</div>
+                    <div data-slot="question-options">
+                      <For each={q.options ?? []}>
+                        {(opt) => {
+                          const selected = answer().includes(opt.label)
+                          return (
+                            <div data-slot="question-option" data-selected={selected || undefined}>
+                              <div data-slot="question-option-row">
+                                <span data-slot="question-option-icon">{selected ? "✓" : "○"}</span>
+                                <span data-slot="question-option-label">{opt.label}</span>
+                              </div>
+                              <Show when={opt.description}>
+                                <div data-slot="question-option-desc">{opt.description}</div>
+                              </Show>
+                            </div>
+                          )
+                        }}
+                      </For>
+                      <For each={answer().filter((a) => !(q.options ?? []).some((o) => o.label === a))}>
+                        {(custom) => (
+                          <div data-slot="question-option" data-selected>
+                            <div data-slot="question-option-row">
+                              <span data-slot="question-option-icon">✓</span>
+                              <span data-slot="question-option-label">{custom}</span>
+                            </div>
+                          </div>
+                        )}
+                      </For>
+                    </div>
                   </div>
                 )
               }}
