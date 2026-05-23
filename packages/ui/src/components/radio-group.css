@@ -11,7 +11,7 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-xxs-border);
     display: inline-flex;
-    height: var(--radio-group-height);
+    min-height: var(--radio-group-height);
     margin: 0;
     overflow: visible;
     padding: 0;
