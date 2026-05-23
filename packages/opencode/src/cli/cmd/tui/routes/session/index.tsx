@@ -2145,6 +2145,7 @@ function Grep(props: ToolProps<typeof GrepTool>) {
   return (
     <InlineTool icon="✱" pending="Searching content..." complete={props.input.pattern} part={props.part}>
       Grep "{props.input.pattern}" <Show when={props.input.path}>in {pathFormatter.format(props.input.path)} </Show>
+      <Show when={props.input.include}>[{props.input.include}] </Show>
       <Show when={props.metadata.matches}>
         ({props.metadata.matches} {props.metadata.matches === 1 ? "match" : "matches"})
       </Show>
@@ -2424,12 +2425,44 @@ function Question(props: ToolProps<typeof QuestionTool>) {
         <BlockTool title="# Questions" part={props.part}>
           <box gap={1}>
             <For each={props.input.questions ?? []}>
-              {(q, i) => (
-                <box flexDirection="column">
-                  <text fg={theme.textMuted}>{q.question}</text>
-                  <text fg={theme.text}>{format(props.metadata.answers?.[i()])}</text>
-                </box>
-              )}
+              {(q, i) => {
+                const answer = () => props.metadata.answers?.[i()] ?? []
+                return (
+                  <box flexDirection="column">
+                    <text fg={theme.textMuted}>{q.question}</text>
+                    <For each={q.options ?? []}>
+                      {(opt) => {
+                        const selected = answer().includes(opt.label)
+                        return (
+                          <box flexDirection="column">
+                            <box flexDirection="row">
+                              <text fg={selected ? theme.success : theme.textMuted}>
+                                {selected ? "✓ " : "○ "}
+                              </text>
+                              <text fg={selected ? theme.text : theme.textMuted}>
+                                {opt.label}
+                              </text>
+                            </box>
+                            <Show when={opt.description}>
+                              <box paddingLeft={2}>
+                                <text fg={theme.textMuted}>{opt.description}</text>
+                              </box>
+                            </Show>
+                          </box>
+                        )
+                      }}
+                    </For>
+                    <For each={answer().filter((a) => !(q.options ?? []).some((o) => o.label === a))}>
+                      {(custom) => (
+                        <box flexDirection="row">
+                          <text fg={theme.success}>✓ </text>
+                          <text fg={theme.text}>{custom}</text>
+                        </box>
+                      )}
+                    </For>
+                  </box>
+                )
+              }}
             </For>
           </box>
         </BlockTool>
