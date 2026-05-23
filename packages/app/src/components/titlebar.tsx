@@ -223,8 +223,8 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
       data-slot={useV2Titlebar() ? "titlebar-v2" : undefined}
       classList={{
         "shrink-0 relative flex flex-row": true,
-        "h-9 bg-v2-background-bg-deep overflow-visible": useV2Titlebar(),
-        "h-10 bg-background-base overflow-hidden": !useV2Titlebar(),
+        "min-h-9 bg-v2-background-bg-deep overflow-visible": useV2Titlebar(),
+        "min-h-10 bg-background-base overflow-hidden": !useV2Titlebar(),
         "order-last": bottom(),
       }}
       style={{
