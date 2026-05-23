@@ -2185,6 +2185,7 @@ function Grep(props: ToolProps) {
     <InlineTool icon="✱" pending="Searching content..." complete={stringValue(props.input.pattern)} part={props.part}>
       Grep "{stringValue(props.input.pattern)}"{" "}
       <Show when={stringValue(props.input.path)}>in {pathFormatter.format(stringValue(props.input.path))} </Show>
+      <Show when={stringValue(props.input.include)}>[{stringValue(props.input.include)}] </Show>
       <Show when={numberValue(props.metadata.matches)}>
         ({numberValue(props.metadata.matches)} {numberValue(props.metadata.matches) === 1 ? "match" : "matches"})
       </Show>
@@ -2490,12 +2491,44 @@ function Question(props: ToolProps) {
         <BlockTool title="# Questions" part={props.part}>
           <box gap={1}>
             <For each={questions()}>
-              {(q, i) => (
-                <box flexDirection="column">
-                  <text fg={theme.textMuted}>{q.question}</text>
-                  <text fg={theme.text}>{format(answers()?.[i()])}</text>
-                </box>
-              )}
+              {(q, i) => {
+                const answer = () => answers()?.[i()] ?? []
+                return (
+                  <box flexDirection="column">
+                    <text fg={theme.textMuted}>{q.question}</text>
+                    <For each={q.options ?? []}>
+                      {(opt) => {
+                        const selected = answer().includes(opt.label)
+                        return (
+                          <box flexDirection="column">
+                            <box flexDirection="row">
+                              <text fg={selected ? theme.success : theme.textMuted}>
+                                {selected ? "✓ " : "○ "}
+                              </text>
+                              <text fg={selected ? theme.text : theme.textMuted}>
+                                {opt.label}
+                              </text>
+                            </box>
+                            <Show when={opt.description}>
+                              <box paddingLeft={2}>
+                                <text fg={theme.textMuted}>{opt.description}</text>
+                              </box>
+                            </Show>
+                          </box>
+                        )
+                      }}
+                    </For>
+                    <For each={answer().filter((a) => !(q.options ?? []).some((o) => o.label === a))}>
+                      {(custom) => (
+                        <box flexDirection="row">
+                          <text fg={theme.success}>✓ </text>
+                          <text fg={theme.text}>{custom}</text>
+                        </box>
+                      )}
+                    </For>
+                  </box>
+                )
+              }}
             </For>
           </box>
         </BlockTool>
@@ -2613,8 +2646,20 @@ export function parseTodos(value: unknown) {
 export function parseQuestions(value: unknown) {
   if (!Array.isArray(value)) return []
   return value.flatMap((item) => {
-    const question = stringValue(recordValue(item)?.question)
-    return question ? [{ question }] : []
+    const rec = recordValue(item)
+    const question = stringValue(rec?.question)
+    if (!question) return []
+    const rawOptions = rec?.options
+    const options = Array.isArray(rawOptions)
+      ? rawOptions.flatMap((opt) => {
+          const optRec = recordValue(opt)
+          const label = stringValue(optRec?.label)
+          if (!label) return []
+          const description = stringValue(optRec?.description)
+          return [{ label, description }]
+        })
+      : []
+    return [{ question, options }]
   })
 }
 
