@@ -382,7 +382,7 @@ export const SettingsKeybinds: Component = () => {
             </Button>
           </div>
 
-          <div class="flex items-center gap-2 px-3 h-9 rounded-lg bg-surface-base">
+          <div class="flex items-center gap-2 px-3 min-h-9 rounded-lg bg-surface-base">
             <Icon name="magnifying-glass" class="text-icon-weak-base flex-shrink-0" />
             <TextField
               variant="ghost"
@@ -418,7 +418,7 @@ export const SettingsKeybinds: Component = () => {
                           type="button"
                           data-keybind-id={id}
                           classList={{
-                            "h-8 px-3 rounded-md text-12-regular": true,
+                            "min-h-8 px-3 rounded-md text-12-regular": true,
                             "bg-surface-base text-text-subtle hover:bg-surface-raised-base-hover active:bg-surface-raised-base-active":
                               store.active !== id,
                             "border border-border-weak-base bg-surface-inset-base text-text-weak": store.active === id,
