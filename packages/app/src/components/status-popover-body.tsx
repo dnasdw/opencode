@@ -339,7 +339,7 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
         defaultValue={settings.general.newLayoutDesigns() ? "mcp" : "servers"}
         variant="alt"
       >
-        <Tabs.List data-slot="tablist" class="bg-transparent border-b-0 px-4 pt-2 pb-0 gap-4 h-10">
+        <Tabs.List data-slot="tablist" class="bg-transparent border-b-0 px-4 pt-2 pb-0 gap-4 min-h-10">
           {!settings.general.newLayoutDesigns() && (
             <Tabs.Trigger value="servers" data-slot="tab" class="text-12-regular">
               {global.servers.list().length > 0 ? `${global.servers.list().length} ` : ""}
@@ -371,7 +371,7 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
                     return (
                       <button
                         type="button"
-                        class="flex items-center gap-2 w-full h-8 pl-3 pr-1.5 py-1.5 rounded-md transition-colors text-left"
+                        class="flex items-center gap-2 w-full min-h-8 pl-3 pr-1.5 py-1.5 rounded-md transition-colors text-left"
                         classList={{
                           "hover:bg-surface-raised-base-hover": !blocked(),
                           "cursor-not-allowed": blocked(),
@@ -411,7 +411,7 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
 
                 <Button
                   variant="secondary"
-                  class="mt-3 self-start h-8 px-3 py-1.5"
+                  class="mt-3 self-start min-h-8 px-3 py-1.5"
                   onClick={() => {
                     const run = ++dialogRun
                     void import("./dialog-select-server").then((x) => {
