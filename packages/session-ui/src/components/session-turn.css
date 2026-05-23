@@ -103,7 +103,7 @@
     top: var(--sticky-accordion-top, 0px);
     z-index: 20;
     background-color: var(--v2-background-bg-base);
-    height: 44px;
+    min-height: 44px;
   }
 
   [data-slot="session-turn-diffs-label"] {
