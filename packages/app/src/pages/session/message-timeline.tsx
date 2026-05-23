@@ -1265,7 +1265,7 @@ export function MessageTimeline(props: {
                 />
               </div>
             </Show>
-            <div class="h-12 w-full flex items-center justify-between gap-2">
+            <div class="min-h-12 w-full flex items-center justify-between gap-2">
               <div class="flex items-center gap-1 min-w-0 flex-1 pr-3">
                 <div class="flex items-center min-w-0 grow-1">
                   <Show when={parentID()}>
