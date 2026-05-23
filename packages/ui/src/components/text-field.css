@@ -76,7 +76,7 @@
       color: var(--text-strong);
 
       display: flex;
-      height: 32px;
+      min-height: 32px;
       padding: 2px 12px;
       align-items: center;
       flex: 1;
