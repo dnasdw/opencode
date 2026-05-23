@@ -21,6 +21,7 @@ feat/web-user-message-border
 feat/web-markdown-tui-theme-colors
 feat/web-reasoning-part-tui-style
 feat/web-translate-overflow-resilience
+feat/tui-tool-display
 
 # ============================================================
 # Fixes
