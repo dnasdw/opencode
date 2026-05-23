@@ -36,7 +36,7 @@ const USE_HOME_DESIGN = import.meta.env.VITE_OPENCODE_CHANNEL !== "prod"
 const HOME_SESSION_LIMIT = 15
 const HOME_ROW =
   "flex min-w-0 w-full shrink-0 cursor-default items-center rounded-[6px] border-0 bg-transparent text-left text-v2-text-text-muted transition-colors duration-[120ms] ease-in-out hover:bg-v2-overlay-simple-overlay-hover focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none"
-const HOME_PROJECT_NAV_ROW = `${HOME_ROW} h-7 gap-2 px-1.5 [&>span]:min-w-0 [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap`
+const HOME_PROJECT_NAV_ROW = `${HOME_ROW} min-h-7 gap-2 px-1.5 [&>span]:min-w-0 [&>span]:overflow-hidden [&>span]:text-ellipsis [&>span]:whitespace-nowrap`
 const HOME_SECTION_LABEL = "text-v2-text-text-muted [font-weight:440]"
 
 type HomeSessionRecord = {
@@ -597,7 +597,7 @@ function HomeSessionRow(props: { record: HomeSessionRecord; openSession: (sessio
     <button
       type="button"
       data-component="home-session-row"
-      class={`${HOME_ROW} h-10 gap-2 px-6 py-3 pl-4`}
+      class={`${HOME_ROW} min-h-10 gap-2 px-6 py-3 pl-4`}
       onClick={() => props.openSession(props.record.session)}
     >
       <Show when={showStatus()}>
