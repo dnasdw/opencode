@@ -62,7 +62,7 @@ export const SettingsModels: Component = () => {
       <div class="sticky top-0 z-10 bg-[linear-gradient(to_bottom,var(--surface-stronger-non-alpha)_calc(100%_-_24px),transparent)]">
         <div class="flex flex-col gap-4 pt-6 pb-6 max-w-[720px]">
           <h2 class="text-16-medium text-text-strong">{language.t("settings.models.title")}</h2>
-          <div class="flex items-center gap-2 px-3 h-9 rounded-lg bg-surface-base">
+          <div class="flex items-center gap-2 px-3 min-h-9 rounded-lg bg-surface-base">
             <Icon name="magnifying-glass" class="text-icon-weak-base flex-shrink-0" />
             <TextField
               variant="ghost"
