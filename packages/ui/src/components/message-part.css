@@ -63,7 +63,7 @@
 
     &[data-type="file"] {
       width: min(220px, 100%);
-      height: 48px;
+      min-height: 48px;
       padding: 0 10px;
     }
   }
@@ -1162,7 +1162,7 @@
     position: sticky;
     top: var(--sticky-accordion-top, 0px);
     z-index: 20;
-    height: calc(32px + var(--tool-content-gap));
+    min-height: calc(32px + var(--tool-content-gap));
     padding-bottom: var(--tool-content-gap);
     background-color: var(--background-stronger);
   }
