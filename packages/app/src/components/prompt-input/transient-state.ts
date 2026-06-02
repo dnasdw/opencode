@@ -11,6 +11,8 @@ export type PromptInputTransientState = {
   mode: "normal" | "shell"
   applyingHistory: boolean
   variantOpen: boolean
+  focusWithin: boolean
+  externalPopoverOpen: boolean
 }
 
 function resetPromptInputTransientState(setStore: SetStoreFunction<PromptInputTransientState>) {
@@ -22,6 +24,8 @@ function resetPromptInputTransientState(setStore: SetStoreFunction<PromptInputTr
     mode: "normal",
     applyingHistory: false,
     variantOpen: false,
+    focusWithin: false,
+    externalPopoverOpen: false,
   })
 }
 
@@ -35,6 +39,8 @@ export function createPromptInputTransientState(identity: Accessor<unknown>, pla
     mode: "normal",
     applyingHistory: false,
     variantOpen: false,
+    focusWithin: false,
+    externalPopoverOpen: false,
   })
 
   createComputed(on(identity, () => resetPromptInputTransientState(setStore), { defer: true }))
