@@ -355,6 +355,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     mode: "normal" | "shell"
     applyingHistory: boolean
     variantOpen: boolean
+    focusWithin: boolean
+    externalPopoverOpen: boolean
   }>({
     popover: null,
     historyIndex: -1,
@@ -364,6 +366,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     mode: "normal",
     applyingHistory: false,
     variantOpen: false,
+    focusWithin: false,
+    externalPopoverOpen: false,
   })
   const [picker, setPicker] = createStore({
     projectOpen: false,
@@ -416,6 +420,53 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (store.mode !== "shell") return items
     return items.filter((item) => !item.comment?.trim())
   })
+
+  // --- Collapse state ---
+  let wrapperRef!: HTMLDivElement
+  let focusTimer: ReturnType<typeof setTimeout> | undefined
+
+  const handleWrapperFocusIn = () => {
+    if (focusTimer) {
+      clearTimeout(focusTimer)
+      focusTimer = undefined
+    }
+    setStore("focusWithin", true)
+  }
+
+  const handleWrapperFocusOut = () => {
+    focusTimer = setTimeout(() => {
+      if (!wrapperRef.contains(document.activeElement)) {
+        setStore("focusWithin", false)
+      }
+      focusTimer = undefined
+    }, 100)
+  }
+
+  const hasOpenPopover = createMemo(() =>
+    store.popover !== null || store.externalPopoverOpen,
+  )
+
+  const collapsed = createMemo(() => {
+    if (!blank()) return false
+    if (store.focusWithin) return false
+    if (hasOpenPopover()) return false
+    if (props.edit) return false
+    if (contextItems().length > 0) return false
+    return true
+  })
+
+  const collapseSpring = useSpring(() => (collapsed() ? 0 : 1), { visualDuration: 0.25, bounce: 0 })
+
+  const collapseSectionStyle = createMemo(() => ({
+    opacity: collapseSpring(),
+    overflow: "hidden" as const,
+    "pointer-events": (collapseSpring() > 0.5 ? "auto" : "none") as const,
+  }))
+
+  onCleanup(() => {
+    if (focusTimer) clearTimeout(focusTimer)
+  })
+  // --- End collapse state ---
 
   const hasUserPrompt = createMemo(() => {
     const sessionID = props.controls.session.id
@@ -1398,6 +1449,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     modelName: props.controls.model.selection.current()?.name ?? language.t("dialog.model.select.title"),
     style: control(),
     onClose: restoreFocus,
+    onOpenChange: (open: boolean) => setStore("externalPopoverOpen", open),
     onUnpaidClick: () => {
       void import("@/components/dialog-select-model-unpaid").then((x) => {
         dialog.show(() => <x.DialogSelectModelUnpaid model={props.controls.model.selection} />)
@@ -1482,6 +1534,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       props.controls.agents.select(value)
       restoreFocus()
     },
+    onOpenChange: (open: boolean) => setStore("externalPopoverOpen", open),
   }))
   const newProjectTriggerState = createMemo<ComposerPickerTriggerState>(() => ({
     action: "prompt-project",
@@ -1493,7 +1546,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   }))
 
   return (
-    <div class="relative size-full flex flex-col gap-0">
+    <div
+      ref={wrapperRef}
+      onFocusIn={handleWrapperFocusIn}
+      onFocusOut={handleWrapperFocusOut}
+      class="relative size-full flex flex-col gap-0"
+    >
       {(promptReady(), null)}
       <PromptPopover
         popover={store.popover}
@@ -1701,29 +1759,36 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 store.draggingType === "@mention" ? "prompt.dropzone.file.label" : "prompt.dropzone.label",
               )}
             />
-            <PromptContextItems
-              items={contextItems()}
-              active={(item) => {
-                const active = comments.active()
-                return !!item.commentID && item.commentID === active?.id && item.path === active?.file
-              }}
-              openComment={openComment}
-              remove={(item) => {
-                if (item.commentID) comments.remove(item.path, item.commentID)
-                prompt.context.remove(item.key)
-              }}
-              t={(key) => language.t(key as Parameters<typeof language.t>[0])}
-            />
-            <PromptImageAttachments
-              attachments={imageAttachments()}
-              onOpen={(attachment) =>
-                dialog.show(() => <ImagePreview src={attachment.dataUrl} alt={attachment.filename} />)
-              }
-              onRemove={removeAttachment}
-              removeLabel={language.t("prompt.attachment.remove")}
-            />
+            <div style={collapseSectionStyle()}>
+              <PromptContextItems
+                items={contextItems()}
+                active={(item) => {
+                  const active = comments.active()
+                  return !!item.commentID && item.commentID === active?.id && item.path === active?.file
+                }}
+                openComment={openComment}
+                remove={(item) => {
+                  if (item.commentID) comments.remove(item.path, item.commentID)
+                  prompt.context.remove(item.key)
+                }}
+                t={(key) => language.t(key as Parameters<typeof language.t>[0])}
+              />
+            </div>
+            <div style={collapseSectionStyle()}>
+              <PromptImageAttachments
+                attachments={imageAttachments()}
+                onOpen={(attachment) =>
+                  dialog.show(() => <ImagePreview src={attachment.dataUrl} alt={attachment.filename} />)
+                }
+                onRemove={removeAttachment}
+                removeLabel={language.t("prompt.attachment.remove")}
+              />
+            </div>
             <div
               class="relative"
+              style={{
+                overflow: collapseSpring() < 1 ? "hidden" : undefined,
+              }}
               onMouseDown={(e) => {
                 const target = e.target
                 if (!(target instanceof HTMLElement)) return
@@ -1767,12 +1832,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     "[&_[data-type=agent]]:text-syntax-type": true,
                     "font-mono!": store.mode === "shell",
                   }}
-                  style={{ "padding-bottom": space }}
+                  style={{ "padding-bottom": `${8 + collapseSpring() * (inset - 8)}px` }}
                 />
                 <div
                   class="absolute top-0 inset-x-0 pl-3 pr-2 pt-2 text-14-regular text-text-weak pointer-events-none whitespace-nowrap truncate"
                   classList={{ "font-mono!": store.mode === "shell" }}
-                  style={{ "padding-bottom": space, display: prompt.dirty() ? "none" : undefined }}
+                  style={{ "padding-bottom": `${8 + collapseSpring() * (inset - 8)}px`, display: prompt.dirty() ? "none" : undefined }}
                 >
                   {placeholder()}
                 </div>
@@ -1785,10 +1850,17 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   height: space,
                   background:
                     "linear-gradient(to top, var(--surface-raised-stronger-non-alpha) calc(100% - 20px), transparent)",
+                  opacity: collapseSpring(),
                 }}
               />
 
-              <div class="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2">
+              <div
+                class="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2"
+                style={{
+                  opacity: collapseSpring(),
+                  "pointer-events": collapseSpring() > 0.5 ? "auto" : "none",
+                }}
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -1818,7 +1890,13 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 </div>
               </div>
 
-              <div class="pointer-events-none absolute bottom-2 left-2">
+              <div
+                class="pointer-events-none absolute bottom-2 left-2"
+                style={{
+                  opacity: collapseSpring(),
+                  "pointer-events": collapseSpring() > 0.5 ? "auto" : "none",
+                }}
+              >
                 <div
                   aria-hidden={store.mode !== "normal"}
                   class="pointer-events-auto"
@@ -1850,7 +1928,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             </div>
           </DockShellForm>
           <Show when={store.mode === "normal" || store.mode === "shell"}>
-            <DockTray attach="top">
+            <DockTray attach="top" style={{ opacity: collapseSpring(), "pointer-events": collapseSpring() > 0.5 ? "auto" : "none", "max-height": collapseSpring() < 1 ? `${collapseSpring() * 60}px` : undefined, overflow: "hidden", "margin-top": `${collapseSpring() * -0.875}rem` }}>
               <div class="px-1.75 pt-5.5 pb-2 flex items-center gap-2 min-w-0">
                 <div class="flex items-center gap-1.5 min-w-0 flex-1 relative">
                   <div
@@ -1893,6 +1971,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                               props.controls.agents.select(value)
                               restoreFocus()
                             }}
+                            onOpenChange={(open) => setStore("externalPopoverOpen", open)}
                             class="capitalize max-w-[160px] text-text-base"
                             valueClass="truncate text-13-regular text-text-base"
                             triggerStyle={control()}
@@ -1965,6 +2044,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                                   "data-action": "prompt-model",
                                 }}
                                 onClose={restoreFocus}
+                                onOpenChange={(open) => setStore("externalPopoverOpen", open)}
                               >
                                 <Show when={props.controls.model.selection.current()?.provider?.id}>
                                   <ProviderIcon
@@ -2002,6 +2082,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                                   props.controls.model.selection.variant.set(value === "default" ? undefined : value)
                                   restoreFocus()
                                 }}
+                                onOpenChange={(open) => setStore("externalPopoverOpen", open)}
                                 class="capitalize max-w-[160px] text-text-base"
                                 valueClass="truncate text-13-regular text-text-base"
                                 triggerStyle={control()}
@@ -2062,6 +2143,7 @@ type ComposerAgentControlState = {
   current: string
   style: JSX.CSSProperties | undefined
   onSelect: (value: string | undefined) => void
+  onOpenChange?: (open: boolean) => void
 }
 
 type ComposerModelControlState = {
@@ -2074,6 +2156,7 @@ type ComposerModelControlState = {
   modelName: string
   style: JSX.CSSProperties | undefined
   onClose: () => void
+  onOpenChange?: (open: boolean) => void
   onUnpaidClick: () => void
 }
 
@@ -2173,6 +2256,7 @@ function ComposerAgentControl(props: { state: ComposerAgentControlState }) {
           options={props.state.options}
           current={props.state.current}
           onSelect={props.state.onSelect}
+          onOpenChange={props.state.onOpenChange}
           class="max-w-[175px] justify-start text-v2-text-text-faint [&_[data-component=icon]]:text-v2-icon-icon-muted"
           valueClass="truncate pl-5 text-[13px] font-[440] leading-5 text-v2-text-text-faint"
           triggerStyle={props.state.style}
@@ -2228,6 +2312,7 @@ function ComposerModelControl(props: { state: ComposerModelControlState }) {
               "data-action": "prompt-model",
             }}
             onClose={props.state.onClose}
+            onOpenChange={props.state.onOpenChange}
           >
             <Show when={props.state.providerID}>
               {(providerID) => (
