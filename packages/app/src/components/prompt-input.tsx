@@ -47,7 +47,7 @@ import { Select } from "@opencode-ai/ui/select"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { ModelSelectorPopover } from "@/components/dialog-select-model"
 import { useProviders } from "@/hooks/use-providers"
-import { useCommand } from "@/context/command"
+import { formatKeybind, useCommand } from "@/context/command"
 import { Persist, persisted } from "@/utils/persist"
 import { usePermission } from "@/context/permission"
 import { useLanguage } from "@/context/language"
@@ -340,7 +340,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     return (
       <div class="flex items-center gap-2">
         <span>{language.t("prompt.action.send")}</span>
-        <Icon name="enter" size="small" class="text-icon-base" />
+        <span class="text-icon-base text-12-medium text-[10px]!">
+          {formatKeybind("mod+enter", language.t)}
+        </span>
       </div>
     )
   }
@@ -1298,9 +1300,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       }
     }
 
-    // Handle Shift+Enter BEFORE IME check - Shift+Enter is never used for IME input
-    // and should always insert a newline regardless of composition state
-    if (event.key === "Enter" && event.shiftKey) {
+    // Handle plain Enter BEFORE IME check - insert newline when no modifier keys are held
+    // (IME composition is checked inline since plain Enter can trigger IME completion)
+    if (event.key === "Enter" && !(event.metaKey || event.ctrlKey) && !isImeComposing(event)) {
       addPart({ type: "text", content: "\n", start: 0, end: 0 })
       event.preventDefault()
       return
@@ -1365,8 +1367,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
-    // Note: Shift+Enter is handled earlier, before IME check
-    if (event.key === "Enter" && !event.shiftKey) {
+    // Note: plain Enter is handled earlier, before IME check
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
       if (event.repeat) return
       if (
