@@ -96,6 +96,7 @@ export function ModelSelectorPopover(props: {
   triggerAs?: ValidComponent
   triggerProps?: ModelSelectorTriggerProps
   onClose?: (cause: "escape" | "select") => void
+  onOpenChange?: (open: boolean) => void
 }) {
   const [store, setStore] = createStore<{
     open: boolean
@@ -111,6 +112,7 @@ export function ModelSelectorPopover(props: {
   const close = (dismiss: Dismiss) => {
     setStore("dismiss", dismiss)
     setStore("open", false)
+    props.onOpenChange?.(false)
   }
 
   const handleManage = () => {
@@ -134,6 +136,7 @@ export function ModelSelectorPopover(props: {
       onOpenChange={(next) => {
         if (next) setStore("dismiss", null)
         setStore("open", next)
+        props.onOpenChange?.(next)
       }}
       modal={false}
       placement="top-start"
