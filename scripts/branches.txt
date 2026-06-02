@@ -24,6 +24,7 @@ feat/web-translate-overflow-resilience
 feat/tui-tool-display
 feat/web-tool-display
 feat/web-remove-virtualizer
+feat/web-prompt-input-collapse
 
 # ============================================================
 # Fixes
