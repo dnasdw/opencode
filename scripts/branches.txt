@@ -37,6 +37,7 @@ fix/web-edit-tool-diff-first-load
 fix/tui-session-list-time-filter
 fix/web-session-list-directory-normalization
 fix/web-zh-i18n-cleanup
+fix/web-session-sidebar
 
 # ============================================================
 # Infrastructure - should always be the LAST branch in the stack
