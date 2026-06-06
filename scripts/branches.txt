@@ -26,6 +26,7 @@ feat/web-tool-display
 feat/web-remove-virtualizer
 feat/web-prompt-input-collapse
 feat/web-prompt-input-enter-behavior
+feat/tui-plugin-subagent-nav
 
 # ============================================================
 # Fixes
