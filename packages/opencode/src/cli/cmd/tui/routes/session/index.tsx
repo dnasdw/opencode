@@ -192,9 +192,37 @@ export function Session() {
   const promptRef = usePromptRef()
   const session = createMemo(() => sync.session.get(route.sessionID))
   const children = createMemo(() => {
-    const parentID = session()?.parentID ?? session()?.id
-    return sync.data.session
-      .filter((x) => x.parentID === parentID || x.id === parentID)
+    const current = session()
+    if (!current) return []
+    const all = sync.data.session
+
+    // Find root ancestor of current session
+    const byID = new Map(all.map((s) => [s.id, s]))
+    let rootID = current.id
+    for (let s: typeof current | undefined = current; s?.parentID; s = byID.get(s.parentID)) {
+      rootID = s.parentID
+    }
+
+    // Collect all descendants of root (flat)
+    const childOf = new Map<string, string[]>()
+    for (const s of all) {
+      if (s.parentID) {
+        const list = childOf.get(s.parentID) ?? []
+        list.push(s.id)
+        childOf.set(s.parentID, list)
+      }
+    }
+    const ids = new Set<string>()
+    const stack = [rootID]
+    while (stack.length > 0) {
+      const id = stack.pop()!
+      if (ids.has(id)) continue
+      ids.add(id)
+      for (const cid of childOf.get(id) ?? []) stack.push(cid)
+    }
+
+    return all
+      .filter((x) => ids.has(x.id))
       .toSorted((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
   })
   const messages = createMemo(() => sync.data.message[route.sessionID] ?? [])
@@ -1023,11 +1051,11 @@ export function Session() {
       hidden: true,
       enabled: !!session()?.parentID,
       run: childSessionHandler(() => {
-        const parentID = session()?.parentID
-        if (parentID) {
+        const root = children().find((x) => !x.parentID)
+        if (root) {
           navigate({
             type: "session",
-            sessionID: parentID,
+            sessionID: root.id,
           })
         }
         dialog.clear()
@@ -1466,7 +1494,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
           )
         }}
       </For>
-      <Show when={props.parts.some((x) => x.type === "tool" && x.tool === "task")}>
+      <Show when={props.parts.some((x) => x.type === "tool" && (x.tool === "task" || "subagent_type" in (x.state.input ?? {})))}>
         <box paddingTop={1} paddingLeft={3}>
           <text fg={theme.text}>
             {childShortcut()}
@@ -1711,7 +1739,7 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "edit"}>
           <Edit {...toolprops} />
         </Match>
-        <Match when={props.part.tool === "task"}>
+        <Match when={props.part.tool === "task" || "subagent_type" in toolprops.input}>
           <Task {...toolprops} />
         </Match>
         <Match when={props.part.tool === "apply_patch"}>
@@ -2164,17 +2192,32 @@ function WebSearch(props: ToolProps<typeof WebSearchTool>) {
 }
 
 function Task(props: ToolProps<typeof TaskTool>) {
+  const ctx = use()
   const { theme } = useTheme()
   const { navigate } = useRoute()
   const sync = useSync()
   const dialog = useDialog()
 
-  onMount(() => {
-    if (props.metadata.sessionId && !sync.data.message[props.metadata.sessionId]?.length)
-      void sync.session.sync(props.metadata.sessionId)
+  const childSessionID = createMemo(() => {
+    if (props.metadata.sessionId) return props.metadata.sessionId as string
+    const output = props.part.state.status === "completed" ? props.part.state.output : undefined
+    if (output) {
+      const match = output.match(/Session ID: (ses_\S+)/)
+      if (match) return match[1]
+    }
+    const child = sync.data.session.find(
+      (x) => x.parentID === ctx.sessionID && x.title.includes(String(props.input.description ?? "")),
+    )
+    if (child) return child.id
+    return undefined
   })
 
-  const messages = createMemo(() => sync.data.message[props.metadata.sessionId ?? ""] ?? [])
+  onMount(() => {
+    if (childSessionID() && !sync.data.message[childSessionID() ?? ""]?.length)
+      void sync.session.sync(childSessionID()!)
+  })
+
+  const messages = createMemo(() => sync.data.message[childSessionID() ?? ""] ?? [])
 
   const tools = createMemo(() => {
     return messages().flatMap((msg) =>
@@ -2190,7 +2233,7 @@ function Task(props: ToolProps<typeof TaskTool>) {
 
   const isRunning = createMemo(() => props.part.state.status === "running")
   const retry = createMemo(() => {
-    const status = sync.data.session_status[props.metadata.sessionId ?? ""]
+    const status = sync.data.session_status[childSessionID() ?? ""]
     if (status?.type !== "retry") return
     return status
   })
@@ -2240,8 +2283,9 @@ function Task(props: ToolProps<typeof TaskTool>) {
       pending="Delegating..."
       part={props.part}
       onClick={() => {
-        if (props.metadata.sessionId) {
-          navigate({ type: "session", sessionID: props.metadata.sessionId })
+        const id = childSessionID()
+        if (id) {
+          navigate({ type: "session", sessionID: id })
         }
         const status = retry()
         if (status) void DialogAlert.show(dialog, "Retry Error", status.message)
