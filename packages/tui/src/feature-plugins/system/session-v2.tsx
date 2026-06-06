@@ -506,7 +506,7 @@ function AssistantTool(props: { part: SessionMessageAssistantTool; sessionID: st
       <Match when={props.part.name === "skill"}>
         <Skill {...toolprops} />
       </Match>
-      <Match when={props.part.name === "task"}>
+      <Match when={props.part.name === "task" || "subagent_type" in input()}>
         <Task {...toolprops} />
       </Match>
       <Match when={true}>

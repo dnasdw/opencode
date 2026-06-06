@@ -22,8 +22,32 @@ export function SubagentFooter() {
 
     if (!s.parentID) return { label, index: 0, total: 0 }
 
-    const siblings = sync.data.session
-      .filter((x) => x.parentID === s.parentID)
+    // Walk up to root, then collect all descendants (flat list matching navigation)
+    const all = sync.data.session
+    const byID = new Map(all.map((x) => [x.id, x]))
+    let rootID = s.id
+    for (let cur: typeof s | undefined = s; cur?.parentID; cur = byID.get(cur.parentID)) {
+      rootID = cur.parentID
+    }
+    const childOf = new Map<string, string[]>()
+    for (const x of all) {
+      if (x.parentID) {
+        const list = childOf.get(x.parentID) ?? []
+        list.push(x.id)
+        childOf.set(x.parentID, list)
+      }
+    }
+    const ids = new Set<string>()
+    const stack = [rootID]
+    while (stack.length > 0) {
+      const id = stack.pop()!
+      if (ids.has(id)) continue
+      ids.add(id)
+      for (const cid of childOf.get(id) ?? []) stack.push(cid)
+    }
+
+    const siblings = all
+      .filter((x) => ids.has(x.id) && !!x.parentID)
       .toSorted((a, b) => a.time.created - b.time.created)
     const index = siblings.findIndex((x) => x.id === s.id)
 
