@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { $ } from "bun"
+import { $, type BunPlugin } from "bun"
 import fs from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
@@ -23,6 +23,26 @@ const skipInstall = process.argv.includes("--skip-install")
 const sourcemapsFlag = process.argv.includes("--sourcemaps")
 const plugin = createSolidTransformPlugin()
 const skipEmbedWebUi = process.argv.includes("--skip-embed-web-ui")
+
+// Bun's bundler mis-handles `package.json` `sideEffects` paths on Windows
+// (oven-sh/bun#30322, still unfixed in 1.3.14): POSIX-style entries like
+// `./dist/solid.mjs` never match Windows-resolved paths, so side-effect imports
+// such as `import "opentui-spinner/solid"` get tree-shaken on Windows builds,
+// causing `[Reconciler] Unknown component type: spinner` at runtime.
+// Linux CI builds (cross-compile to Windows) are unaffected because path
+// separators match. This plugin restores correct behavior on every host by
+// explicitly marking the module as having side effects via the official
+// `OnResolveResult.sideEffects` API. Remove once Bun ships #30322.
+const preserveSpinnerSideEffects: BunPlugin = {
+  name: "preserve-spinner-side-effects",
+  setup(build) {
+    build.onResolve({ filter: /^opentui-spinner\/(?:solid|react)$/ }, (args) => ({
+      // Resolve to absolute path (required by Bun when namespace is "file").
+      path: Bun.resolveSync(args.path, path.dirname(args.importer)),
+      sideEffects: true,
+    }))
+  },
+}
 
 const createEmbeddedWebUIBundle = async () => {
   console.log(`Building Web UI to embed in the binary`)
@@ -168,7 +188,7 @@ for (const item of targets) {
   await Bun.build({
     conditions: ["bun", "node"],
     tsconfig: "./tsconfig.json",
-    plugins: [plugin],
+    plugins: [plugin, preserveSpinnerSideEffects],
     external: ["node-gyp"],
     format: "esm",
     minify: true,
