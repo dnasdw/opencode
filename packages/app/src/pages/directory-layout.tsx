@@ -44,10 +44,12 @@ export function DirectoryDataProvider(
 
   createResource(
     () => params.id,
-    (id) =>
-      sync()
+    (id) => {
+      sync().set("currentSessionID", id)
+      return sync()
         .session.sync(id)
-        .catch(() => {}),
+        .catch(() => {})
+    },
   )
 
   return (
