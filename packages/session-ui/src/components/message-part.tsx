@@ -1386,22 +1386,22 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   // @ts-expect-error
   const partMetadata = () => part().state?.metadata ?? emptyMetadata
   const taskId = createMemo(() => {
-    if (part().tool !== "task") return
+    if (part().tool !== "task" && !("subagent_type" in input())) return
     const value = partMetadata().sessionId
     if (typeof value === "string" && value) return value
   })
   const taskHref = createMemo(() => {
-    if (part().tool !== "task") return
+    if (part().tool !== "task" && !("subagent_type" in input())) return
     return sessionLink(taskId(), useLocation().pathname, data.sessionHref)
   })
   const taskSubtitle = createMemo(() => {
-    if (part().tool !== "task") return undefined
+    if (part().tool !== "task" && !("subagent_type" in input())) return undefined
     const value = input().description
     if (typeof value === "string" && value) return value
     return taskId()
   })
 
-  const render = createMemo(() => ToolRegistry.render(part().tool) ?? GenericTool)
+  const render = createMemo(() => ToolRegistry.render(part().tool) ?? ("subagent_type" in input() ? getTool("task") : undefined) ?? GenericTool)
   const controlledOpen = () => (props.onToolOpenChange ? (props.toolOpen ?? props.defaultOpen) : undefined)
   const handleToolOpenChange = (open: boolean) => props.onToolOpenChange?.(open)
 
@@ -1803,6 +1803,10 @@ ToolRegistry.register({
     const childSessionId = createMemo(() => {
       const value = props.metadata.sessionId
       if (typeof value === "string" && value) return value
+      if (typeof props.output === "string") {
+        const match = props.output.match(/Session ID: (ses_\S+)/)
+        if (match) return match[1]
+      }
       return taskSession(props.input, location.pathname, data.store.session, data.store.agent)
     })
     const agent = createMemo(() => taskAgent(props.input.subagent_type, data.store.agent))

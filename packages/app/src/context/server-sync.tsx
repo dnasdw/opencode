@@ -264,6 +264,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
       const next = trimSessions(store.session, {
         limit: retainedLimit,
         permission: store.permission,
+        currentSessionID: store.currentSessionID,
       })
       if (next.length !== store.session.length) {
         setStore("session", reconcile(next, { key: "id" }))
@@ -289,10 +290,12 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
                 .filter((s) => !s.time?.archived)
                 .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
               const limit = Math.max(store.limit, options?.limit ?? 0, sessionMeta.get(key)?.limit ?? 0)
-              const childSessions = store.session.filter((s) => !!s.parentID)
-              const sessions = trimSessions([...nonArchived, ...childSessions], {
+              const freshIds = new Set(nonArchived.map((s) => s.id))
+              const merged = [...nonArchived, ...store.session.filter((s) => !freshIds.has(s.id))]
+              const sessions = trimSessions(merged, {
                 limit,
                 permission: store.permission,
+                currentSessionID: store.currentSessionID,
               })
               batch(() => {
                 setStore(
