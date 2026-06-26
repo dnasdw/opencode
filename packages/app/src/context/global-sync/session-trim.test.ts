@@ -56,4 +56,49 @@ describe("trimSessions", () => {
       "root-2",
     ])
   })
+
+  test("keeps multi-level children when root ancestor is kept", () => {
+    const now = 1_000_000
+    const list = [
+      session({ id: "root-1", created: now - 1000 }),
+      session({ id: "z-root", created: now - 30_000_000 }),
+      session({ id: "level2", parentID: "root-1", created: now - 20_000_000 }),
+      session({ id: "level3", parentID: "level2", created: now - 20_000_000 }),
+      session({ id: "level4", parentID: "level3", created: now - 20_000_000 }),
+      session({ id: "level3-trimmed", parentID: "z-root-child", created: now - 20_000_000 }),
+      session({ id: "z-root-child", parentID: "z-root", created: now - 20_000_000 }),
+    ]
+
+    const result = trimSessions(list, { limit: 1, permission: {}, now })
+
+    expect(result.map((x) => x.id)).toEqual([
+      "level2",
+      "level3",
+      "level4",
+      "root-1",
+    ])
+  })
+
+  test("preserves current session ancestor and descendant chain even when root is not in limit", () => {
+    const now = 1_000_000
+    const list = [
+      session({ id: "root-1", created: now - 1000 }),
+      session({ id: "z-root", created: now - 30_000_000 }),
+      session({ id: "level2", parentID: "z-root", created: now - 20_000_000 }),
+      session({ id: "level3", parentID: "level2", created: now - 20_000_000 }),
+      session({ id: "level4", parentID: "level3", created: now - 20_000_000 }),
+      session({ id: "level3-child", parentID: "level3", created: now - 20_000_000 }),
+    ]
+
+    const result = trimSessions(list, { limit: 1, permission: {}, now, currentSessionID: "level3" })
+
+    expect(result.map((x) => x.id)).toEqual([
+      "level2",
+      "level3",
+      "level3-child",
+      "level4",
+      "root-1",
+      "z-root",
+    ])
+  })
 })

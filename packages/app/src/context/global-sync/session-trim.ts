@@ -32,14 +32,14 @@ export function takeRecentSessions(sessions: Session[], limit: number, cutoff: n
 
 export function trimSessions(
   input: Session[],
-  options: { limit: number; permission: Record<string, PermissionRequest[]>; now?: number },
+  options: { limit: number; permission: Record<string, PermissionRequest[]>; now?: number; currentSessionID?: string },
 ) {
   const limit = Math.max(0, options.limit)
   const cutoff = (options.now ?? Date.now()) - SESSION_RECENT_WINDOW
-  const all = input
-    .filter((s) => !!s?.id)
-    .filter((s) => !s.time?.archived)
-    .sort((a, b) => cmp(a.id, b.id))
+  const all = [...new Map(input.filter((s) => !!s?.id && !s.time?.archived).map((s) => [s.id, s])).values()].sort((a, b) =>
+    cmp(a.id, b.id),
+  )
+  const sessionById = new Map(all.map((s) => [s.id, s] as const))
   const roots = all.filter((s) => !s.parentID)
   roots.sort(compareSessionRecent)
   const children = all.filter((s) => !!s.parentID)
@@ -47,8 +47,35 @@ export function trimSessions(
   const recent = takeRecentSessions(roots.slice(limit), SESSION_RECENT_LIMIT, cutoff)
   const keepRoots = [...base, ...recent]
   const keepRootIds = new Set(keepRoots.map((s) => s.id))
+
+  if (options.currentSessionID) {
+    let top: Session | undefined = sessionById.get(options.currentSessionID)
+    while (top?.parentID && sessionById.has(top.parentID)) top = sessionById.get(top.parentID)
+    if (top && !keepRootIds.has(top.id)) {
+      keepRoots.push(top)
+      keepRootIds.add(top.id)
+    }
+  }
+
+  const childOf = new Map<string, Session[]>()
+  for (const s of children) {
+    const list = childOf.get(s.parentID!) ?? []
+    list.push(s)
+    childOf.set(s.parentID!, list)
+  }
+  const keepChildIds = new Set<string>()
+  const stack = [...keepRootIds]
+  while (stack.length > 0) {
+    const id = stack.pop()!
+    for (const child of childOf.get(id) ?? []) {
+      if (keepChildIds.has(child.id)) continue
+      keepChildIds.add(child.id)
+      stack.push(child.id)
+    }
+  }
+
   const keepChildren = children.filter((s) => {
-    if (s.parentID && keepRootIds.has(s.parentID)) return true
+    if (keepChildIds.has(s.id)) return true
     const perms = options.permission[s.id] ?? []
     if (perms.length > 0) return true
     return sessionUpdatedAt(s) > cutoff
