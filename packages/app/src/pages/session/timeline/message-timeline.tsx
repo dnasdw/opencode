@@ -78,9 +78,11 @@ type FramedTimelineRow = Exclude<TimelineRow.TimelineRow, { _tag: "TurnGap" }>
 type TimelineRowByTag<T extends TimelineRow.TimelineRow["_tag"]> = Extract<TimelineRow.TimelineRow, { _tag: T }>
 
 const taskDescription = (part: PartType, sessionID: string) => {
-  if (part.type !== "tool" || part.tool !== "task") return
+  if (part.type !== "tool") return
+  if (part.tool !== "task" && !("subagent_type" in (part.state.input ?? {}))) return
   const metadata = "metadata" in part.state ? part.state.metadata : undefined
-  if (metadata?.sessionId !== sessionID) return
+  const output = part.tool !== "task" && typeof part.state.output === "string" ? part.state.output : undefined
+  if (metadata?.sessionId !== sessionID && !output?.includes(sessionID)) return
   const value = part.state.input?.description
   if (typeof value === "string" && value) return value
 }
@@ -282,7 +284,7 @@ export function MessageTimeline(props: {
     if (!id) return emptyMessages
     return sync().data.message[id] ?? emptyMessages
   })
-  const parentTitle = createMemo(() => sessionTitle(parent()?.title) ?? language.t("command.session.new"))
+  const parentTitle = createMemo(() => sessionTitle(parent()?.title)?.replace(/\s+\(@[^)]+ subagent\)$/, "") ?? language.t("command.session.new"))
   const getMsgParts = (msgId: string) => sync().data.part[msgId] ?? emptyParts
   const getMsgPart = (messageID: string, partID: string) => getMsgParts(messageID).find((part) => part.id === partID)
   const childTaskDescription = createMemo(() => {
@@ -583,6 +585,25 @@ export function MessageTimeline(props: {
         if (!id || description) return
         if (sync().data.message[id] !== undefined) return
         void sync().session.sync(id)
+      },
+      { defer: true },
+    ),
+  )
+
+  createEffect(
+    on(
+      () => {
+        const id = sessionID()
+        if (!id) return
+        let cur = sync().session.get(id)
+        while (cur?.parentID) {
+          const parent = sync().session.get(cur.parentID)
+          if (!parent) return cur.parentID
+          cur = parent
+        }
+      },
+      (id) => {
+        if (id) void sync().session.sync(id)
       },
       { defer: true },
     ),
