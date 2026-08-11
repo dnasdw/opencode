@@ -1,0 +1,10 @@
+@integration mycode
+@remote-primary origin
+@remote-upstream upstream
+
+# upstream sync branches (one per line, repeatable) - used by 03-sync only
+@sync dev
+
+# Stack DAG: "<branch> <upstream>". @base = the base passed as a CLI arg.
+# Multiple roots allowed. Order = upstream before downstream.
+restack @base
