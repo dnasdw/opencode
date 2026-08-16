@@ -18,3 +18,4 @@ feat/web-user-message-border feat/mycode-build
 feat/web-markdown-tui-theme-colors feat/mycode-build
 feat/web-reasoning-part-tui-style feat/mycode-build
 fix/web-markdown-custom-tags feat/mycode-build
+fix/tui-html-entity-encoding feat/mycode-build
