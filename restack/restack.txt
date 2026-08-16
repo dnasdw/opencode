@@ -20,3 +20,4 @@ feat/web-reasoning-part-tui-style feat/mycode-build
 fix/web-markdown-custom-tags feat/mycode-build
 fix/tui-html-entity-encoding feat/mycode-build
 feat/tui-tool-display feat/mycode-build
+feat/web-tool-display feat/mycode-build
