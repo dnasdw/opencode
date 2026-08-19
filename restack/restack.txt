@@ -26,3 +26,4 @@ fix/web-edit-tool-diff-first-load feat/mycode-build
 feat/web-translate-overflow-resilience feat/mycode-build
 feat/web-remove-virtualizer feat/mycode-build
 fix/tui-session-list-time-filter feat/mycode-build
+fix/web-session-list-directory-normalization feat/mycode-build
