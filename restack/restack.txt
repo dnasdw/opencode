@@ -30,3 +30,4 @@ fix/web-session-list-directory-normalization feat/mycode-build
 feat/web-prompt-input-collapse feat/mycode-build
 fix/web-zh-i18n-cleanup feat/mycode-build
 feat/web-prompt-input-enter-behavior feat/mycode-build
+fix/web-session-sidebar feat/mycode-build
