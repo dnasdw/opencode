@@ -21,4 +21,4 @@ fix/tui-session-list-time-filter 2cb714f83b7957774cdb1282244ace4245d9357d
 feat/web-prompt-input-collapse 959d01ceb9c8ca2351ce4ee7b53b5790c546a0b0
 fix/web-zh-i18n-cleanup 4dfbc281f6ab301c64e7d5b718b42602a483bdfe
 feat/web-prompt-input-enter-behavior f5ea3b5abd36b9e045c01ada9d0ce265e5a526ae
-feat/tui-plugin-subagent-nav f440392b6fcae7acca8f5bec2ac915fcd2c91872
+feat/tui-plugin-subagent-nav fd80012375e756908625c6d38893882fc1e60e93
