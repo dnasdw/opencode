@@ -5,8 +5,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/lib.sh"
 USAGE="usage: 05-upgrade.sh <base> [<branch>]
   Re-base every DAG branch (or up to <branch> inclusive) onto <base> via
   bridge-commit + cherry-pick. Auto-backup runs before any branch is touched
-  (phase=0pre) and again after the loop when at least one branch was upgraded
-  (phase=1post); a fully-skipped idempotent re-run does NOT take a post-backup.
+  (phase=0pre) and again after the loop whenever the run completes without a
+  conflict (phase=1post) - including a fully-skipped idempotent re-run.
   Options:
     -h, --help    Show this message and exit."
 
@@ -144,10 +144,10 @@ if [ "${#result_lines[@]}" -eq 0 ]; then
 fi
 restack_print_result "result: 05-upgrade" "${result_lines[@]}"
 
-# Post-run auto-backup. Only fires when at least one branch was actually
-# upgraded - a fully-skipped idempotent re-run changed nothing, so a post
-# snapshot would be identical to the pre snapshot and only clutter the
-# backup namespace.
-if [ "${#upgraded[@]}" -gt 0 ]; then
-  restack_auto_backup "$RESTACK_RUN_TS" upgrade 1post "${backup_params[@]}"
-fi
+# Post-run auto-backup. Fires whenever the loop completes - i.e. the run
+# ended with no unresolved conflict - even when every branch was idempotently
+# skipped. Simplified design: a conflict run exits above before reaching this
+# point, and the re-run after the manual resolution is all-skips, so gating
+# the post snapshot on "real work happened" would leave the manually
+# resolved state unsnapshotted.
+restack_auto_backup "$RESTACK_RUN_TS" upgrade 1post "${backup_params[@]}"
