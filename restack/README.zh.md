@@ -67,7 +67,7 @@ bridge 到位之后，restack 用 `git update-ref refs/heads/<branch> <bridge>; 
 | `02-backup.sh` | （无参数） | 对 DAG 分支、集成分支和所有 `refs/restack/*` 做快照 |
 | `03-sync.sh` | （无参数） | 从上游 fetch 配置的 `@sync` 分支；本地分支不存在则按上游 tip 创建（追踪 origin），追踪了其它远端则改回追踪 origin，否则 fast-forward |
 | `04-pull.sh` | （无参数） | fetch、创建或 fast-forward 本地分支、从 primary 拉取 `refs/restack/*` |
-| `05-upgrade.sh` | `05-upgrade.sh <base> [<branch>]` | 把所有（或截至 `<branch>`）feature 分支重新 base：DAG 根到 `<base>`，子分支到其父分支的已升级 tip。bridge 加 cherry-pick。运行前后各自动备份一次；幂等重跑跳过过程后那次 |
+| `05-upgrade.sh` | `05-upgrade.sh <base> [<branch>]` | 把所有（或截至 `<branch>`）feature 分支重新 base：DAG 根到 `<base>`，子分支到其父分支的已升级 tip。bridge 加 cherry-pick。运行前后各自动备份一次；只要本次运行未因冲突中断，过程后那次快照恒执行（完全幂等跳过的重跑也一样） |
 | `06-stack.sh` | `06-stack.sh <base>` | 通过把每个 feature cherry-pick 到 bridge 上来构建集成分支。运行前后各自动备份一次；STEP 1 幂等早退跳过过程后那次 |
 | `07-push.sh` | `07-push.sh [git-push-args]` | 把所有分支、tag 和 `refs/restack/*` 推到 primary |
 | `08-restore.sh` | `08-restore.sh [<pattern> [<branch>]]` | 列出备份名，或从某个快照恢复分支和记录。`<pattern>` 是对备份名做子串匹配；匹配到多个时打印所有候选名并以非零码退出 |
@@ -135,7 +135,7 @@ restack 是半手动的。当冲突还带有未解决的标记时，脚本不会
 
 (c) **集成分支上的独立 commit。** 当配置分支没变时，集成分支会保留不是来自 restack 的 commit。已合并的 pull request 就是一个例子。在完整 re-stack 时这些 commit 会被丢弃，这是设计如此，因为在重放 feature commit 之前，集成 tip 会被 bridge 回到 base。
 
-(d) **自动备份 + 手动 restore。** `05-upgrade.sh`、`06-stack.sh` 和 `10-force-upgrade.sh` 每次运行会把每个 DAG 分支、集成分支和所有 `refs/restack/*` 快照到 `refs/backups/pre-restack/<name>/` 两次：一次在任何破坏性操作之前（`<phase> = 0pre`），一次在运行完成之后（`<phase> = 1post`）。完全幂等跳过的重跑只产生 pre 快照而不产生 post 快照（什么都没变，post 就是重复）;`10-force-upgrade.sh` 没有跳过路径,它的 post 快照恒执行。每次运行结束时（无论成功还是失败）EXIT trap 都会打印引用 pre 快照名的回滚提示 - 那是本次运行安全的撤销点。如果你解决冲突弄错了，`08-restore.sh <pattern>` 会把所有受影响分支和记录恢复到匹配快照时的状态。`<pattern>` 对备份名做子串匹配，并且会按备份名写入时的同一套 sanitize 规则做预处理（所以 `feature/api` 能匹配到从 `feature/api` 参数创建的快照——那参数在备份名里被存为 `feature-api`）。完整的名字永远合法，但你也可以传部分比如 `20260101-120000` 或 `upgrade-1post`。如果模式匹配到多个，`08-restore.sh` 和 `09-cleanup.sh` 会把所有匹配打印到 stdout 并以非零码退出，方便你复制其中一个再重跑。不带参数运行 `08-restore.sh` 可列出可用快照，其输出与 `09-cleanup.sh` 完全一致。`02-backup.sh` 仍可随时用于显式快照（它的名字只有时间戳）。没有任何其他脚本会强制 restore。
+(d) **自动备份 + 手动 restore。** `05-upgrade.sh`、`06-stack.sh` 和 `10-force-upgrade.sh` 每次运行会把每个 DAG 分支、集成分支和所有 `refs/restack/*` 快照到 `refs/backups/pre-restack/<name>/` 两次：一次在任何破坏性操作之前（`<phase> = 0pre`），一次在运行完成之后（`<phase> = 1post`）。`05-upgrade.sh` 只要本次运行未因冲突中断就恒产生 post 快照，完全幂等跳过的重跑也一样，这样手动解决冲突后的状态总会被捕获（冲突那次运行本身在 post 快照之前就退出，由重跑补拍）;`06-stack.sh` 保持原规则：STEP 1 幂等早退只产生 pre 快照而不产生 post 快照（什么都没变，post 就是重复）;`10-force-upgrade.sh` 没有跳过路径,它的 post 快照恒执行。每次运行结束时（无论成功还是失败）EXIT trap 都会打印引用 pre 快照名的回滚提示 - 那是本次运行安全的撤销点。如果你解决冲突弄错了，`08-restore.sh <pattern>` 会把所有受影响分支和记录恢复到匹配快照时的状态。`<pattern>` 对备份名做子串匹配，并且会按备份名写入时的同一套 sanitize 规则做预处理（所以 `feature/api` 能匹配到从 `feature/api` 参数创建的快照——那参数在备份名里被存为 `feature-api`）。完整的名字永远合法，但你也可以传部分比如 `20260101-120000` 或 `upgrade-1post`。如果模式匹配到多个，`08-restore.sh` 和 `09-cleanup.sh` 会把所有匹配打印到 stdout 并以非零码退出，方便你复制其中一个再重跑。不带参数运行 `08-restore.sh` 可列出可用快照，其输出与 `09-cleanup.sh` 完全一致。`02-backup.sh` 仍可随时用于显式快照（它的名字只有时间戳）。没有任何其他脚本会强制 restore。
 
 (e) **非 fast-forward 的 push 和 pull 由你管理。** `07-push.sh` 使用普通的 `git push`，不带 `+` 也不带 `--force`。`04-pull.sh` 从远端 fast-forward 本地分支，并报告任何分叉的分支。如果你手动用 `--force` 或 `git reset` 重写了分支引用，结果状态由你自己负责。
 
