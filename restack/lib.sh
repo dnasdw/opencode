@@ -553,11 +553,25 @@ restack_rerere_enabled() {
 
 # Returns 0 if there are unmerged paths AND none of them still carry conflict
 # markers (i.e. rerere has resolved them, awaiting `git add` + `--continue`).
+# Guard: modify/delete conflicts (one side deleted the file - e.g. the new
+# base deleted it while the replayed commit modifies it) NEVER carry markers,
+# and rerere never records resolutions for them, so a marker scan alone would
+# misread them as rerere-resolved and `git add` the deleted file back
+# wholesale. Only a two-sided conflict - both index stage 2 ("ours") and
+# stage 3 ("theirs") present - can be a rerere-resolved content conflict;
+# a path missing either side always stays manual.
 restack_conflicts_all_resolved() {
   local unmerged file
   unmerged=$(git diff --name-only --diff-filter=U 2>/dev/null)
   [ -z "$unmerged" ] && return 1
   for file in $unmerged; do
+    if ! git ls-files -u -- "$file" | awk '
+      $3 == "2" { has2 = 1 }
+      $3 == "3" { has3 = 1 }
+      END { exit !(has2 && has3) }
+    '; then
+      return 1
+    fi
     if grep -q '^<<<<<<< ' "$file" 2>/dev/null; then
       return 1
     fi

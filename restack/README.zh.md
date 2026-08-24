@@ -129,7 +129,7 @@ restack 是半手动的。当冲突还带有未解决的标记时，脚本不会
 
 这四种都是合法选择。下一次运行会信任你留在仓库里的状态。
 
-**rerere 例外。** 如果 `rerere.enabled` 为 `true`，并且 rerere 之前已经为相同的冲突签名记录过解决方案，`05-upgrade.sh` 和 `06-stack.sh` 会自动 stage 由 rerere 解决的文件，并替你运行 `git cherry-pick --continue --no-edit`。任何冲突的首次出现仍由你解决；rerere 只会复用你已经教过它的解决方案。重试循环有上限（50 次），一旦冲突仍带有真实标记，就回到手动路径。
+**rerere 例外。** 如果 `rerere.enabled` 为 `true`，并且 rerere 之前已经为相同的冲突签名记录过解决方案，`05-upgrade.sh` 和 `06-stack.sh` 会自动 stage 由 rerere 解决的文件，并替你运行 `git cherry-pick --continue --no-edit`。任何冲突的首次出现仍由你解决；rerere 只会复用你已经教过它的解决方案。重试循环有上限（50 次），一旦冲突仍带有真实标记，就回到手动路径。修改/删除冲突（新 base 删除了某个文件、而被重放的提交修改了该文件，或相反）从来不会带有冲突标记，rerere 也不会为它们记录解决方案，因此自动继续永远不会对它们触发：它们总是停下来，等待你手动执行 `git add <file>`（保留修改）或 `git rm <file>`（接受删除）。
 
 (b) **你可以故意制造冲突。** 如果你只想 stack 一个分支的一部分，可以在边界处让 cherry-pick 因冲突停下，按你的意图解决，让下一次运行从那里继续。
 
