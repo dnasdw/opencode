@@ -8,7 +8,8 @@
 # Stack DAG: "<branch> <upstream>". @base = the base passed as a CLI arg.
 # Multiple roots allowed. Order = upstream before downstream.
 restack @base
-feat/mycode-build restack
+fix/tui-spinner-buildfix restack
+feat/mycode-build fix/tui-spinner-buildfix
 feat/tui-message-limit feat/mycode-build
 feat/web-dialog-close-button feat/mycode-build
 feat/tui-message-meta feat/mycode-build
