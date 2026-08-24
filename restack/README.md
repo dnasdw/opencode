@@ -129,7 +129,7 @@ restack is semi-manual. The scripts do not run `git cherry-pick --continue`, `--
 
 All four are valid. The next run trusts whatever state you left the repo in.
 
-**Rerere exception.** If `rerere.enabled` is `true` and rerere has previously recorded a resolution for an identical conflict signature, `05-upgrade.sh` and `06-stack.sh` automatically stage the rerere-resolved files and run `git cherry-pick --continue --no-edit` for you. The first occurrence of any conflict is still yours to resolve; rerere only reuses resolutions you have already taught it. The retry loop is bounded (50 attempts) and falls through to the manual path as soon as a conflict still carries real markers.
+**Rerere exception.** If `rerere.enabled` is `true` and rerere has previously recorded a resolution for an identical conflict signature, `05-upgrade.sh` and `06-stack.sh` automatically stage the rerere-resolved files and run `git cherry-pick --continue --no-edit` for you. The first occurrence of any conflict is still yours to resolve; rerere only reuses resolutions you have already taught it. The retry loop is bounded (50 attempts) and falls through to the manual path as soon as a conflict still carries real markers. Modify/delete conflicts (the new base deleted a file that a replayed commit modifies, or vice versa) never carry conflict markers, and rerere never records resolutions for them, so the auto-continue never fires for them: they always stop for a manual `git add <file>` (keep the modification) or `git rm <file>` (accept the deletion).
 
 (b) **You can induce a conflict on purpose.** If you want to stack only part of a branch, stop the cherry-pick with a conflict at the boundary, resolve it the way you want, and let the next run pick up from there.
 
