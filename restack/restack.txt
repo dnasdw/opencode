@@ -31,3 +31,4 @@ feat/web-prompt-input-collapse feat/mycode-build
 fix/web-zh-i18n-cleanup feat/mycode-build
 feat/web-prompt-input-enter-behavior feat/mycode-build
 feat/tui-plugin-subagent-nav feat/mycode-build
+feat/web-plugin-subagent-nav feat/mycode-build
